@@ -13,6 +13,7 @@
 
 typedef struct wt_node {
     struct wt_node *left, *right;
+    int32_t *flags;
 } wt_node;
 
 typedef struct wt_tree {
@@ -24,11 +25,13 @@ typedef struct wt_tree {
 void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, int32_t upper) {
     if(lower+1 == upper) return;
 
+    cur->flags = calloc(right - left, sizeof(*data));
+
     int32_t *buffer = calloc(right - left, sizeof(*data));
     int32_t mid = (lower + upper) >> 1;
     int nl = 0, nr = 0;
     int i;
-    for(i = 0; i < right - left; ++i)
+    for(i = 0; i < right - left; ++i) {
         if(data[i+left] <= mid) {
             buffer[i] = data[i+left];
             ++nl;
@@ -36,6 +39,8 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
         else {
             ++nr;
         }
+        cur->flags[i] = nl;
+    }
     if (nl) {
         cur->left = calloc(1, sizeof(wt_node));
         _wt_build(cur->left, buffer, left, left+nl, lower, mid);
