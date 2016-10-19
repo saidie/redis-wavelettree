@@ -72,6 +72,14 @@ wt_tree *wt_build(int32_t *data, size_t len) {
     return tree;
 }
 
+int wt_map_left(wt_node *cur, int i) {
+    return cur->counts[i];
+}
+
+int wt_map_right(wt_node *cur, int i) {
+    return i - cur->counts[i];
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvtre", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
       return REDISMODULE_ERR;
