@@ -34,7 +34,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     int nl = 0, nr = 0;
     int i, j;
     for(i = 0, j = 0; i < n; ++i) {
-        if(data[i] <= mid) {
+        if(data[i] < mid) {
             buffer[j] = data[i];
             ++nl;
             ++j;
@@ -52,7 +52,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     if (!nr) goto end;
 
     for(i = 0, j = 0; i < n; ++i)
-        if (data[i] > mid)
+        if (data[i] >= mid)
             buffer[j++] = data[i];
     cur->right = calloc(1, sizeof(wt_node));
     _wt_build(cur->right, buffer, n - nl, mid, upper);
@@ -86,7 +86,7 @@ int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
 
     int32_t mid = (lower + upper) >> 1;
 
-    if (value <= mid) {
+    if (value < mid) {
         if (!cur->left) return 0;
         return rank(cur->left, value, wt_map_left(cur, i), lower, mid);
     }
