@@ -29,7 +29,7 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
     cur->counts = calloc(right - left + 1, sizeof(*data));
     cur->counts[0] = 0;
 
-    int32_t *buffer = malloc(right - left, sizeof(*data));
+    int32_t *buffer = malloc((right - left) * sizeof(*data));
     int32_t mid = (lower + upper) >> 1;
     int nl = 0, nr = 0;
     int i;
