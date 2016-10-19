@@ -5,6 +5,7 @@
 #define MIN_ALPHABET (1<<(MAX_HEIGHT-1))
 
 #ifdef REDIS_MODULE
+#define malloc RedisModule_Malloc
 #define calloc RedisModule_Calloc
 #define free RedisModule_Free
 #else
@@ -13,7 +14,7 @@
 
 typedef struct wt_node {
     struct wt_node *left, *right;
-    int32_t *flags;
+    int32_t *counts;
 } wt_node;
 
 typedef struct wt_tree {
@@ -25,9 +26,10 @@ typedef struct wt_tree {
 void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, int32_t upper) {
     if(lower+1 == upper) return;
 
-    cur->flags = calloc(right - left, sizeof(*data));
+    cur->counts = calloc(right - left + 1, sizeof(*data));
+    cur->counts[0] = 0;
 
-    int32_t *buffer = calloc(right - left, sizeof(*data));
+    int32_t *buffer = malloc(right - left, sizeof(*data));
     int32_t mid = (lower + upper) >> 1;
     int nl = 0, nr = 0;
     int i;
@@ -39,7 +41,7 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
         else {
             ++nr;
         }
-        cur->flags[i] = nl;
+        cur->counts[i+1] = nl;
     }
     if (nl) {
         cur->left = calloc(1, sizeof(wt_node));
