@@ -118,5 +118,9 @@ int main(void) {
         3, 3, 9, 1, 2, 1, 7, 6, 4, 8, 9, 4, 3, 7, 5, 9, 2, 7, 3, 5, 1, 3
     };
     wt_tree *t = wt_build(array, 22);
+
+    printf("rank_3(S, 14) = %d\n", rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
+    printf("quantile_6(S, 6, 16) = %d\n", quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
+
     return 0;
 }
