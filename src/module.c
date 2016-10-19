@@ -23,7 +23,7 @@ typedef struct wt_tree {
     size_t len;
 } wt_tree;
 
-void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, int32_t upper) {
+void _wt_build(wt_node *cur, const int32_t *data, int left, int right, int32_t lower, int32_t upper) {
     if(lower+1 == upper) return;
 
     cur->counts = calloc(right - left + 1, sizeof(*data));
@@ -32,11 +32,12 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
     int32_t *buffer = malloc((right - left) * sizeof(*data));
     int32_t mid = (lower + upper) >> 1;
     int nl = 0, nr = 0;
-    int i;
-    for(i = 0; i < right - left; ++i) {
-        if(data[i+left] <= mid) {
-            buffer[i] = data[i+left];
+    int i, j;
+    for(i = 0, j = 0; i < right - left; ++i) {
+        if(data[i] <= mid) {
+            buffer[j] = data[i];
             ++nl;
+            ++j;
         }
         else {
             ++nr;
@@ -50,9 +51,9 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
 
     if (!nr) goto end;
 
-    for(i = 0; i < right - left; ++i)
-        if (data[i+left] > mid)
-            buffer[i] = data[i+left];
+    for(i = 0, j = 0; i < right - left; ++i)
+        if (data[i] > mid)
+            buffer[j++] = data[i];
     cur->right = calloc(1, sizeof(wt_node));
     _wt_build(cur->right, buffer, left+nl, right, mid, upper);
 
