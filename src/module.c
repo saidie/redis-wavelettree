@@ -81,6 +81,20 @@ int wt_map_right(wt_node *cur, int i) {
     return i - cur->counts[i];
 }
 
+int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
+    if(lower+1 == upper) return i;
+
+    int32_t mid = (lower + upper) >> 1;
+
+    if (value <= mid) {
+        if (!cur->left) return 0;
+        return rank(cur->left, value, wt_map_left(cur, i), lower, mid);
+    }
+
+    if (!cur->right) return 0;
+    return rank(cur->right, value, wt_map_right(cur, i), mid, upper);
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvtre", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
       return REDISMODULE_ERR;
