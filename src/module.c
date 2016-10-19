@@ -95,6 +95,16 @@ int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
     return rank(cur->right, value, wt_map_right(cur, i), mid, upper);
 }
 
+int quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
+    if(lower+1 == upper) return lower;
+
+    int32_t mid = (lower + upper) >> 1;
+    if (k <= cur->counts[j] - cur->counts[i])
+        return quantile(cur->left, k, wt_map_left(cur, i), wt_map_left(cur, j), lower, mid);
+
+    return quantile(cur->right, k - (cur->counts[j] - cur->counts[i]), wt_map_right(cur, i), wt_map_right(cur, j), mid, upper);
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvtre", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
       return REDISMODULE_ERR;
