@@ -27,7 +27,8 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
     int32_t *buffer = calloc(right - left, sizeof(*data));
     int32_t mid = (lower + upper) >> 1;
     int nl = 0, nr = 0;
-    for(int i = 0; i < right - left; ++i)
+    int i;
+    for(i = 0; i < right - left; ++i)
         if(data[i+left] <= mid) {
             buffer[i] = data[i+left];
             ++nl;
@@ -42,7 +43,7 @@ void _wt_build(wt_node *cur, int32_t *data, int left, int right, int32_t lower, 
 
     if (!nr) goto end;
 
-    for(int i = 0; i < right - left; ++i)
+    for(i = 0; i < right - left; ++i)
         if (data[i+left] > mid)
             buffer[i] = data[i+left];
     cur->right = calloc(1, sizeof(wt_node));
