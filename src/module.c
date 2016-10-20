@@ -81,6 +81,15 @@ int wt_map_right(wt_node *cur, int i) {
     return i - cur->counts[i];
 }
 
+int32_t access(wt_node *cur, int i, int32_t lower, int32_t upper) {
+    if(lower+1 == upper) return lower;
+
+    int32_t mid = (lower + upper) >> 1;
+    if (cur->counts[i+1] - cur->counts[i])
+        return access(cur->left, wt_map_left(cur, i), lower, mid);
+    return access(cur->right, wt_map_right(cur, i), mid, upper);
+}
+
 int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
     if(lower+1 == upper) return i;
 
