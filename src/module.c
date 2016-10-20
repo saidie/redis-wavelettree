@@ -128,6 +128,10 @@ int main(void) {
     };
     wt_tree *t = wt_build(array, 22);
 
+    for(int i = 0; i < 22; ++i)
+        printf("%d ", access(t->root, i, MIN_ALPHABET, MAX_ALPHABET));
+    printf("\n");
+
     printf("rank_3(S, 14) = %d\n", rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
     printf("quantile_6(S, 6, 16) = %d\n", quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
 
