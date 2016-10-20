@@ -48,7 +48,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
         cur->counts[i+1] = nl;
     }
     if (nl) {
-        cur->left = malloc(sizeof(wt_node));
+        cur->left = wt_node_new();
         _wt_build(cur->left, buffer, nl, lower, mid);
     }
 
@@ -57,7 +57,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     for(i = 0, j = 0; i < n; ++i)
         if (data[i] >= mid)
             buffer[j++] = data[i];
-    cur->right = malloc(sizeof(wt_node));
+    cur->right = wt_node_new();
     _wt_build(cur->right, buffer, n - nl, mid, upper);
 
 end:
@@ -68,7 +68,7 @@ wt_tree *wt_build(int32_t *data, size_t len) {
     wt_tree *tree;
     tree = malloc(sizeof(*tree));
     tree->len = len;
-    tree->root = malloc(sizeof(wt_node));
+    tree->root = wt_node_new();
 
     _wt_build(tree->root, data, len, MIN_ALPHABET, MAX_ALPHABET);
 
