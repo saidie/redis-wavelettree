@@ -22,6 +22,10 @@ typedef struct wt_tree {
     size_t len;
 } wt_tree;
 
+wt_node *wt_node_new(void) {
+    return calloc(1, sizeof(wt_node));
+}
+
 void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t upper) {
     if(lower+1 == upper) return;
 
