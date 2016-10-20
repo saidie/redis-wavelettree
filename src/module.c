@@ -75,6 +75,18 @@ wt_tree *wt_build(int32_t *data, size_t len) {
     return tree;
 }
 
+void wt_node_free(wt_node *cur) {
+    if (cur->left) wt_node_free(cur->left);
+    if (cur->right) wt_node_free(cur->right);
+    free(cur->counts);
+    free(cur);
+}
+
+void wt_tree_free(wt_tree *tree) {
+    wt_node_free(tree->root);
+    free(tree);
+}
+
 int wt_map_left(wt_node *cur, int i) {
     return cur->counts[i];
 }
