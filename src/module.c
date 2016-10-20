@@ -19,7 +19,6 @@ typedef struct wt_node {
 
 typedef struct wt_tree {
     wt_node *root;
-    int32_t *data;
     size_t len;
 } wt_tree;
 
@@ -64,7 +63,6 @@ end:
 wt_tree *wt_build(int32_t *data, size_t len) {
     wt_tree *tree;
     tree = malloc(sizeof(*tree));
-    tree->data = data;
     tree->len = len;
     tree->root = malloc(sizeof(wt_node));
 
