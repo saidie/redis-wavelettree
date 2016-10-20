@@ -149,5 +149,7 @@ int main(void) {
     printf("rank_3(S, 14) = %d\n", rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
     printf("quantile_6(S, 6, 16) = %d\n", quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
 
+    wt_tree_free(t);
+
     return 0;
 }
