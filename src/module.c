@@ -12,9 +12,82 @@
 #include <stdlib.h>
 #endif
 
+typedef struct fid {
+    size_t n;
+    size_t ssize;
+    uint32_t *bs;
+    uint32_t *rs;
+    uint32_t *rb;
+} fid;
+
+fid *fid_new(uint32_t *bytes, size_t n) {
+    fid *fid = calloc(1, sizeof(*fid));
+    fid->bs = bytes;
+    fid->n = n;
+    int nbs = 0;
+    while(n >>= 1) ++nbs;
+    if (!nbs) ++nbs;
+    fid->ssize = nbs << 5;
+    uint32_t ns = fid->n / fid->ssize + 1;
+    uint32_t nb = (fid->n >> 5) + 1;
+    fid->rs = calloc(ns, sizeof(uint32_t));
+    fid->rb = calloc(nb, sizeof(uint32_t));
+
+    int i = 0, srank = 0, brank;
+    uint32_t *rs = fid->rs, *rb = fid->rb;
+    n = fid->n;
+    while (1) {
+        if (i == 0) {
+            brank = 0;
+            *(rs++) = srank;
+        }
+        *(rb++) = brank;
+
+        if (n > 0) {
+            int pc = __builtin_popcount(*(bytes++));
+            srank += pc;
+            brank += pc;
+        }
+        if (++i == nbs)
+            i = 0;
+
+        if (n < 32) break;
+        n -= 32;
+    }
+
+    return fid;
+}
+
+void fid_free(fid *fid) {
+    free(fid->bs);
+    free(fid->rs);
+    free(fid->rb);
+    free(fid);
+}
+
+int fid_rank(fid *fid, size_t i) {
+    uint32_t b = (i & 0x1F) ? (fid->bs[i >> 5] >> (32 - (i & 0x1F)) << (32 - (i & 0x1F))) : 0;
+    return fid->rs[i / fid->ssize] + fid->rb[i >> 5] + __builtin_popcount(b);
+}
+
+int fid_select(fid *fid, int b, int i) {
+    int l = 0, r = fid->n;
+    while (l < r) {
+        int m = (l + r) >> 1;
+        int rank = fid_rank(fid, m);
+        if (!b) rank = m - rank;
+        if (i <= rank)
+            r = m;
+        else
+            l = m + 1;
+    }
+    return l;
+}
+
 typedef struct wt_node {
-    struct wt_node *left, *right;
-    int32_t *counts;
+    struct wt_node *parent, *left, *right;
+    fid *fid;
+    int n;
 } wt_node;
 
 typedef struct wt_tree {
@@ -22,33 +95,44 @@ typedef struct wt_tree {
     size_t len;
 } wt_tree;
 
-wt_node *wt_node_new(void) {
-    return calloc(1, sizeof(wt_node));
+wt_node *wt_node_new(wt_node *parent) {
+    wt_node *node = calloc(1, sizeof(wt_node));
+    node->parent = parent;
+    return node;
 }
 
 void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t upper) {
+    cur->n = n;
+
     if(lower+1 == upper) return;
 
-    cur->counts = malloc((n + 1) * sizeof(*data));
-    cur->counts[0] = 0;
+    int32_t mid = ((long long)lower + upper) >> 1;
+    int nbytes = (n >> 5) + ((n & 0x1F) ? 1 : 0);
 
-    int32_t *buffer = malloc((n) * sizeof(*data));
-    int32_t mid = (lower + upper) >> 1;
-    int nl = 0, nr = 0;
-    int i, j;
-    for(i = 0, j = 0; i < n; ++i) {
-        if(data[i] < mid) {
-            buffer[j] = data[i];
-            ++nl;
-            ++j;
+    int32_t *buffer = malloc((n) * sizeof(int32_t));
+    uint32_t *bytes = calloc(nbytes, sizeof(uint32_t));
+
+    int i, j, k, nl = 0, nr = 0;
+    for(i = 0, k = 0; i < nbytes; ++i) {
+        for(j = 0; j < 32; ++j) {
+            bytes[i] <<= 1;
+            if (k < n) {
+                if (data[k] < mid) {
+                    buffer[nl++] = data[k];
+                    bytes[i] |= 1;
+                }
+                else {
+                    ++nr;
+                }
+                ++k;
+            }
         }
-        else {
-            ++nr;
-        }
-        cur->counts[i+1] = nl;
     }
+
+    cur->fid = fid_new(bytes, n);
+
     if (nl) {
-        cur->left = wt_node_new();
+        cur->left = wt_node_new(cur);
         _wt_build(cur->left, buffer, nl, lower, mid);
     }
 
@@ -57,8 +141,9 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     for(i = 0, j = 0; i < n; ++i)
         if (data[i] >= mid)
             buffer[j++] = data[i];
-    cur->right = wt_node_new();
-    _wt_build(cur->right, buffer, n - nl, mid, upper);
+
+    cur->right = wt_node_new(cur);
+    _wt_build(cur->right, buffer, nr, mid, upper);
 
 end:
     free(buffer);
@@ -68,7 +153,7 @@ wt_tree *wt_build(int32_t *data, size_t len) {
     wt_tree *tree;
     tree = malloc(sizeof(*tree));
     tree->len = len;
-    tree->root = wt_node_new();
+    tree->root = wt_node_new(NULL);
 
     _wt_build(tree->root, data, len, MIN_ALPHABET, MAX_ALPHABET);
 
@@ -78,7 +163,7 @@ wt_tree *wt_build(int32_t *data, size_t len) {
 void wt_node_free(wt_node *cur) {
     if (cur->left) wt_node_free(cur->left);
     if (cur->right) wt_node_free(cur->right);
-    free(cur->counts);
+    if (cur->fid) fid_free(cur->fid);
     free(cur);
 }
 
@@ -87,45 +172,98 @@ void wt_tree_free(wt_tree *tree) {
     free(tree);
 }
 
-int wt_map_left(wt_node *cur, int i) {
-    return cur->counts[i];
+static inline int wt_map_left(wt_node *cur, int i) {
+    return fid_rank(cur->fid, i);
 }
 
-int wt_map_right(wt_node *cur, int i) {
-    return i - cur->counts[i];
+static inline int wt_map_right(wt_node *cur, int i) {
+    return i - fid_rank(cur->fid, i);
 }
 
-int32_t access(wt_node *cur, int i, int32_t lower, int32_t upper) {
-    if(lower+1 == upper) return lower;
-
-    int32_t mid = (lower + upper) >> 1;
-    if (cur->counts[i+1] - cur->counts[i])
-        return access(cur->left, wt_map_left(cur, i), lower, mid);
-    return access(cur->right, wt_map_right(cur, i), mid, upper);
+int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
+        if (fid_rank(cur->fid, i+1) - fid_rank(cur->fid, i)) {
+            i = wt_map_left(cur, i);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            i = wt_map_right(cur, i);
+            lower = mid;
+            cur = cur->right;
+        }
+    }
+    return lower;
 }
 
-int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
-    if(lower+1 == upper) return i;
+int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
 
-    int32_t mid = (lower + upper) >> 1;
+        if (value < mid) {
+            if (!cur->left) return 0;
+            i = wt_map_left(cur, i);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            if (!cur->right) return 0;
+            i = wt_map_right(cur, i);
+            lower = mid;
+            cur = cur->right;
+        }
+    }
+    return i;
+}
 
-    if (value < mid) {
-        if (!cur->left) return 0;
-        return rank(cur->left, value, wt_map_left(cur, i), lower, mid);
+int wt_select(const wt_node *cur, int32_t v, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
+
+        if (v < mid) {
+            if (!cur->left) return -1;
+            cur = cur->left;
+            upper = mid;
+        }
+        else {
+            if (!cur->right) return -1;
+            cur = cur->right;
+            lower = mid;
+        }
     }
 
-    if (!cur->right) return 0;
-    return rank(cur->right, value, wt_map_right(cur, i), mid, upper);
+    if (cur->n < i) return -1;
+
+    while (cur->parent) {
+        int left = cur == cur->parent->left;
+        cur = cur->parent;
+        i = fid_select(cur->fid, left ? 1 : 0, i);
+    }
+
+    return i - 1;
 }
 
-int quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
-    if(lower+1 == upper) return lower;
+int wt_quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
 
-    int32_t mid = (lower + upper) >> 1;
-    if (k <= cur->counts[j] - cur->counts[i])
-        return quantile(cur->left, k, wt_map_left(cur, i), wt_map_left(cur, j), lower, mid);
-
-    return quantile(cur->right, k - (cur->counts[j] - cur->counts[i]), wt_map_right(cur, i), wt_map_right(cur, j), mid, upper);
+        int ln = fid_rank(cur->fid, j) - fid_rank(cur->fid, i);
+        if (k <= ln) {
+            i = wt_map_left(cur, i);
+            j = wt_map_left(cur, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            k -= ln;
+            i = wt_map_right(cur, i);
+            j = wt_map_right(cur, j);
+            lower = mid;
+            cur = cur->right;
+        }
+    }
+    return lower;
 }
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -142,12 +280,14 @@ int main(void) {
     };
     wt_tree *t = wt_build(array, 22);
 
-    for(int i = 0; i < 22; ++i)
-        printf("%d ", access(t->root, i, MIN_ALPHABET, MAX_ALPHABET));
+    int i;
+    for(i = 0; i < 22; ++i)
+        printf("%d ", wt_access(t->root, i, MIN_ALPHABET, MAX_ALPHABET));
     printf("\n");
 
-    printf("rank_3(S, 14) = %d\n", rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
-    printf("quantile_6(S, 6, 16) = %d\n", quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
+    printf("rank_3(S, 14) = %d\n", wt_rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
+    printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
+    printf("select(S, 3, 4) = %d\n", wt_select(t->root, 3, 4, MIN_ALPHABET, MAX_ALPHABET));
 
     wt_tree_free(t);
 
