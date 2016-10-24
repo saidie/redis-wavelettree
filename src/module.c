@@ -21,21 +21,21 @@ typedef struct fid {
 } fid;
 
 fid *fid_new(const uint32_t *bytes, size_t n) {
-    fid *xx = calloc(1, sizeof(fid));
-    xx->bs = bytes;
-    xx->n = n;
+    fid *fid = calloc(1, sizeof(*fid));
+    fid->bs = bytes;
+    fid->n = n;
     int nbs = 0;
     while(n >>= 1) ++nbs;
     if (!nbs) ++nbs;
-    xx->ssize = nbs << 5;
-    uint32_t ns = xx->n / xx->ssize + 1;
-    uint32_t nb = (xx->n >> 5) + 1;
-    xx->rs = calloc(ns, sizeof(uint32_t));
-    xx->rb = calloc(nb, sizeof(uint32_t));
+    fid->ssize = nbs << 5;
+    uint32_t ns = fid->n / fid->ssize + 1;
+    uint32_t nb = (fid->n >> 5) + 1;
+    fid->rs = calloc(ns, sizeof(uint32_t));
+    fid->rb = calloc(nb, sizeof(uint32_t));
 
     int i = 0, srank = 0, brank;
-    uint32_t *rs = xx->rs, *rb = xx->rb;
-    n = xx->n;
+    uint32_t *rs = fid->rs, *rb = fid->rb;
+    n = fid->n;
     while (1) {
         if (i == 0) {
             brank = 0;
@@ -55,7 +55,7 @@ fid *fid_new(const uint32_t *bytes, size_t n) {
         n -= 32;
     }
 
-    return xx;
+    return fid;
 }
 
 int fid_rank(fid *fid, size_t i) {
