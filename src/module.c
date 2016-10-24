@@ -197,18 +197,24 @@ int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
     return lower;
 }
 
-int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
-    if(lower+1 == upper) return i;
+int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
 
-    int32_t mid = (lower + upper) >> 1;
-
-    if (value < mid) {
-        if (!cur->left) return 0;
-        return rank(cur->left, value, wt_map_left(cur, i), lower, mid);
+        if (value < mid) {
+            if (!cur->left) return 0;
+            i = wt_map_left(cur, i);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            if (!cur->right) return 0;
+            i = wt_map_right(cur, i);
+            lower = mid;
+            cur = cur->right;
+        }
     }
-
-    if (!cur->right) return 0;
-    return rank(cur->right, value, wt_map_right(cur, i), mid, upper);
+    return i;
 }
 
 int quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
