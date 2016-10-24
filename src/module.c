@@ -86,7 +86,6 @@ int fid_select(fid *fid, int b, int i) {
 
 typedef struct wt_node {
     struct wt_node *parent, *left, *right;
-    int32_t *counts;
     fid *fid;
     int n;
 } wt_node;
@@ -103,26 +102,35 @@ wt_node *wt_node_new(wt_node *parent) {
 }
 
 void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t upper) {
+    cur->n = n;
+
     if(lower+1 == upper) return;
 
-    cur->counts = malloc((n + 1) * sizeof(*data));
-    cur->counts[0] = 0;
+    int32_t mid = ((long long)lower + upper) >> 1;
+    int nbytes = (n >> 5) + ((n & 0x1F) ? 1 : 0);
 
-    int32_t *buffer = malloc((n) * sizeof(*data));
-    int32_t mid = (lower + upper) >> 1;
-    int nl = 0, nr = 0;
-    int i, j;
-    for(i = 0, j = 0; i < n; ++i) {
-        if(data[i] < mid) {
-            buffer[j] = data[i];
-            ++nl;
-            ++j;
+    int32_t *buffer = malloc((n) * sizeof(int32_t));
+    uint32_t *bytes = calloc(nbytes, sizeof(uint32_t));
+
+    int i, j, k, nl = 0, nr = 0;
+    for(i = 0, k = 0; i < nbytes; ++i) {
+        for(j = 0; j < 32; ++j) {
+            bytes[i] <<= 1;
+            if (k < n) {
+                if (data[k] < mid) {
+                    buffer[nl++] = data[k];
+                    bytes[i] |= 1;
+                }
+                else {
+                    ++nr;
+                }
+                ++k;
+            }
         }
-        else {
-            ++nr;
-        }
-        cur->counts[i+1] = nl;
     }
+
+    cur->fid = fid_new(bytes, n);
+
     if (nl) {
         cur->left = wt_node_new(cur);
         _wt_build(cur->left, buffer, nl, lower, mid);
@@ -133,8 +141,9 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     for(i = 0, j = 0; i < n; ++i)
         if (data[i] >= mid)
             buffer[j++] = data[i];
+
     cur->right = wt_node_new(cur);
-    _wt_build(cur->right, buffer, n - nl, mid, upper);
+    _wt_build(cur->right, buffer, nr, mid, upper);
 
 end:
     free(buffer);
@@ -154,7 +163,7 @@ wt_tree *wt_build(int32_t *data, size_t len) {
 void wt_node_free(wt_node *cur) {
     if (cur->left) wt_node_free(cur->left);
     if (cur->right) wt_node_free(cur->right);
-    free(cur->counts);
+    if (cur->fid) fid_free(cur->fid);
     free(cur);
 }
 
