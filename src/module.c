@@ -15,12 +15,12 @@
 typedef struct fid {
     size_t n;
     size_t ssize;
-    const uint32_t *bs;
+    uint32_t *bs;
     uint32_t *rs;
     uint32_t *rb;
 } fid;
 
-fid *fid_new(const uint32_t *bytes, size_t n) {
+fid *fid_new(uint32_t *bytes, size_t n) {
     fid *fid = calloc(1, sizeof(*fid));
     fid->bs = bytes;
     fid->n = n;
@@ -56,6 +56,13 @@ fid *fid_new(const uint32_t *bytes, size_t n) {
     }
 
     return fid;
+}
+
+void fid_free(fid *fid) {
+    free(fid->bs);
+    free(fid->rs);
+    free(fid->rb);
+    free(fid);
 }
 
 int fid_rank(fid *fid, size_t i) {
