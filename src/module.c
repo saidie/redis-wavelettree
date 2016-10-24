@@ -142,7 +142,8 @@ int main(void) {
     };
     wt_tree *t = wt_build(array, 22);
 
-    for(int i = 0; i < 22; ++i)
+    int i;
+    for(i = 0; i < 22; ++i)
         printf("%d ", access(t->root, i, MIN_ALPHABET, MAX_ALPHABET));
     printf("\n");
 
