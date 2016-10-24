@@ -85,7 +85,7 @@ int fid_select(fid *fid, int b, int i) {
 }
 
 typedef struct wt_node {
-    struct wt_node *left, *right;
+    struct wt_node *parent, *left, *right;
     int32_t *counts;
 } wt_node;
 
@@ -94,8 +94,10 @@ typedef struct wt_tree {
     size_t len;
 } wt_tree;
 
-wt_node *wt_node_new(void) {
-    return calloc(1, sizeof(wt_node));
+wt_node *wt_node_new(wt_node *parent) {
+    wt_node *node = calloc(1, sizeof(wt_node));
+    node->parent = parent;
+    return node;
 }
 
 void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t upper) {
@@ -120,7 +122,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
         cur->counts[i+1] = nl;
     }
     if (nl) {
-        cur->left = wt_node_new();
+        cur->left = wt_node_new(cur);
         _wt_build(cur->left, buffer, nl, lower, mid);
     }
 
@@ -129,7 +131,7 @@ void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t 
     for(i = 0, j = 0; i < n; ++i)
         if (data[i] >= mid)
             buffer[j++] = data[i];
-    cur->right = wt_node_new();
+    cur->right = wt_node_new(cur);
     _wt_build(cur->right, buffer, n - nl, mid, upper);
 
 end:
@@ -140,7 +142,7 @@ wt_tree *wt_build(int32_t *data, size_t len) {
     wt_tree *tree;
     tree = malloc(sizeof(*tree));
     tree->len = len;
-    tree->root = wt_node_new();
+    tree->root = wt_node_new(NULL);
 
     _wt_build(tree->root, data, len, MIN_ALPHABET, MAX_ALPHABET);
 
