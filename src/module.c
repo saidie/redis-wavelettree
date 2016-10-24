@@ -12,6 +12,14 @@
 #include <stdlib.h>
 #endif
 
+typedef struct fid {
+    size_t n;
+    size_t ssize;
+    const uint32_t *bs;
+    uint32_t *rs;
+    uint32_t *rb;
+} fid;
+
 typedef struct wt_node {
     struct wt_node *left, *right;
     int32_t *counts;
