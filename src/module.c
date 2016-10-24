@@ -87,6 +87,8 @@ int fid_select(fid *fid, int b, int i) {
 typedef struct wt_node {
     struct wt_node *parent, *left, *right;
     int32_t *counts;
+    fid *fid;
+    int n;
 } wt_node;
 
 typedef struct wt_tree {
