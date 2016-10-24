@@ -217,6 +217,33 @@ int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
     return i;
 }
 
+int wt_select(const wt_node *cur, int32_t v, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
+
+        if (v < mid) {
+            if (!cur->left) return -1;
+            cur = cur->left;
+            upper = mid;
+        }
+        else {
+            if (!cur->right) return -1;
+            cur = cur->right;
+            lower = mid;
+        }
+    }
+
+    if (cur->n < i) return -1;
+
+    while (cur->parent) {
+        int left = cur == cur->parent->left;
+        cur = cur->parent;
+        i = fid_select(cur->fid, left ? 1 : 0, i);
+    }
+
+    return i - 1;
+}
+
 int wt_quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
     while (lower+1 < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
