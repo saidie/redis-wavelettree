@@ -172,12 +172,12 @@ void wt_tree_free(wt_tree *tree) {
     free(tree);
 }
 
-int wt_map_left(wt_node *cur, int i) {
-    return cur->counts[i];
+static inline int wt_map_left(wt_node *cur, int i) {
+    return fid_rank(cur->fid, i);
 }
 
-int wt_map_right(wt_node *cur, int i) {
-    return i - cur->counts[i];
+static inline int wt_map_right(wt_node *cur, int i) {
+    return i - fid_rank(cur->fid, i);
 }
 
 int32_t access(wt_node *cur, int i, int32_t lower, int32_t upper) {
