@@ -180,13 +180,21 @@ static inline int wt_map_right(wt_node *cur, int i) {
     return i - fid_rank(cur->fid, i);
 }
 
-int32_t access(wt_node *cur, int i, int32_t lower, int32_t upper) {
-    if(lower+1 == upper) return lower;
-
-    int32_t mid = (lower + upper) >> 1;
-    if (cur->counts[i+1] - cur->counts[i])
-        return access(cur->left, wt_map_left(cur, i), lower, mid);
-    return access(cur->right, wt_map_right(cur, i), mid, upper);
+int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
+    while (lower+1 < upper) {
+        int32_t mid = ((long long)lower + upper) >> 1;
+        if (fid_rank(cur->fid, i+1) - fid_rank(cur->fid, i)) {
+            i = wt_map_left(cur, i);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            i = wt_map_right(cur, i);
+            lower = mid;
+            cur = cur->right;
+        }
+    }
+    return lower;
 }
 
 int rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
