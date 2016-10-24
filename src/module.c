@@ -63,6 +63,20 @@ int fid_rank(fid *fid, size_t i) {
     return fid->rs[i / fid->ssize] + fid->rb[i >> 5] + __builtin_popcount(b);
 }
 
+int fid_select(fid *fid, int b, int i) {
+    int l = 0, r = fid->n;
+    while (l < r) {
+        int m = (l + r) >> 1;
+        int rank = fid_rank(fid, m);
+        if (!b) rank = m - rank;
+        if (i <= rank)
+            r = m;
+        else
+            l = m + 1;
+    }
+    return l;
+}
+
 typedef struct wt_node {
     struct wt_node *left, *right;
     int32_t *counts;
