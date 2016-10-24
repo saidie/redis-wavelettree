@@ -58,6 +58,11 @@ fid *fid_new(const uint32_t *bytes, size_t n) {
     return xx;
 }
 
+int fid_rank(fid *fid, size_t i) {
+    uint32_t b = (i & 0x1F) ? (fid->bs[i >> 5] >> (32 - (i & 0x1F)) << (32 - (i & 0x1F))) : 0;
+    return fid->rs[i / fid->ssize] + fid->rb[i >> 5] + __builtin_popcount(b);
+}
+
 typedef struct wt_node {
     struct wt_node *left, *right;
     int32_t *counts;
