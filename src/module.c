@@ -20,6 +20,44 @@ typedef struct fid {
     uint32_t *rb;
 } fid;
 
+fid *fid_new(const uint32_t *bytes, size_t n) {
+    fid *xx = calloc(1, sizeof(fid));
+    xx->bs = bytes;
+    xx->n = n;
+    int nbs = 0;
+    while(n >>= 1) ++nbs;
+    if (!nbs) ++nbs;
+    xx->ssize = nbs << 5;
+    uint32_t ns = xx->n / xx->ssize + 1;
+    uint32_t nb = (xx->n >> 5) + 1;
+    xx->rs = calloc(ns, sizeof(uint32_t));
+    xx->rb = calloc(nb, sizeof(uint32_t));
+
+    int i = 0, srank = 0, brank;
+    uint32_t *rs = xx->rs, *rb = xx->rb;
+    n = xx->n;
+    while (1) {
+        if (i == 0) {
+            brank = 0;
+            *(rs++) = srank;
+        }
+        *(rb++) = brank;
+
+        if (n > 0) {
+            int pc = __builtin_popcount(*(bytes++));
+            srank += pc;
+            brank += pc;
+        }
+        if (++i == nbs)
+            i = 0;
+
+        if (n < 32) break;
+        n -= 32;
+    }
+
+    return xx;
+}
+
 typedef struct wt_node {
     struct wt_node *left, *right;
     int32_t *counts;
