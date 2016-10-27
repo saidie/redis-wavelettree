@@ -4,6 +4,30 @@
 #define MAX_ALPHABET ((1<<(MAX_HEIGHT-1))-1)
 #define MIN_ALPHABET (1<<(MAX_HEIGHT-1))
 
+#define FID_POWER_B(fid) 5
+#define FID_POWER_SB(fid) 9
+#define FID_POWER_DIFF_B2SB(fid) (FID_POWER_SB(fid) - FID_POWER_B(fid))
+
+#define FID_NBIT_B(fid) (1<<FID_POWER_B(fid))
+#define FID_NBIT_SB(fid) (1<<FID_POWER_SB(fid))
+
+// mask
+#define FID_MASK_BLOCK(fid) 0xFFFFFFFF
+#define FID_MASK_BOFFSET(fid) ((1<<FID_POWER_SB(fid))-1)
+#define FID_MASK_BSEP(fid) ((1<<FID_POWER_DIFF_B2SB(fid))-1)
+#define FID_MASK_BI(fid) ((1<<FID_POWER_B(fid))-1)
+#define FID_MASK_BLOCK_I(fid, i) (((i) & FID_MASK_BI(fid)) ? (FID_MASK_BLOCK(fid) << (FID_NBIT_B(fid) - ((i) & FID_MASK_BI(fid)))) : 0)
+
+// index conversion
+#define FID_I2BI(fid, i) ((i) >> FID_POWER_B(fid))
+#define FID_BI2I(fid, i) ((i) << FID_POWER_B(fid))
+#define FID_I2SBI(fid, i) ((i) >> FID_POWER_SB(fid))
+#define FID_SBI2I(fid, i) ((i) << FID_POWER_SB(fid))
+#define FID_BI2SBI(fid, i) ((i) >> FID_POWER_DIFF_B2SB(fid))
+#define FID_SBI2BI(fid, i) ((i) << FID_POWER_DIFF_B2SB(fid))
+
+#define FID_CHOP_BLOCK_I(fid, b, i) ((b) & FID_MASK_BLOCK_I(fid, i))
+
 #ifdef REDIS_MODULE
 #define malloc RedisModule_Malloc
 #define calloc RedisModule_Calloc
