@@ -38,7 +38,6 @@
 
 typedef struct fid {
     size_t n;
-    size_t ssize;
     uint32_t *bs;
     uint32_t *rs;
     uint32_t *rb;
@@ -48,35 +47,23 @@ fid *fid_new(uint32_t *bytes, size_t n) {
     fid *fid = calloc(1, sizeof(*fid));
     fid->bs = bytes;
     fid->n = n;
-    int nbs = 0;
-    while(n >>= 1) ++nbs;
-    if (!nbs) ++nbs;
-    fid->ssize = nbs << 5;
-    uint32_t ns = fid->n / fid->ssize + 1;
-    uint32_t nb = (fid->n >> 5) + 1;
-    fid->rs = calloc(ns, sizeof(uint32_t));
-    fid->rb = calloc(nb, sizeof(uint32_t));
+    fid->rs = calloc(FID_I2SBI(fid, fid->n) + 1, sizeof(uint32_t));
+    fid->rb = calloc(FID_I2BI(fid, fid->n) + 1, sizeof(uint32_t));
 
-    int i = 0, srank = 0, brank;
+    int i, srank = 0, brank = 0;
     uint32_t *rs = fid->rs, *rb = fid->rb;
-    n = fid->n;
-    while (1) {
-        if (i == 0) {
+    *(rs++) = 0;
+    *(rb++) = 0;
+    for(i = 1; i <= FID_I2BI(fid, fid->n); ++i) {
+        int pc = __builtin_popcount(*(bytes++));
+        srank += pc;
+        brank += pc;
+
+        if (!(i & FID_MASK_BSEP(fid))) {
             brank = 0;
             *(rs++) = srank;
         }
         *(rb++) = brank;
-
-        if (n > 0) {
-            int pc = __builtin_popcount(*(bytes++));
-            srank += pc;
-            brank += pc;
-        }
-        if (++i == nbs)
-            i = 0;
-
-        if (n < 32) break;
-        n -= 32;
     }
 
     return fid;
