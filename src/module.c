@@ -1,6 +1,15 @@
 #include "redismodule.h"
 #include "wavelet_tree.h"
 
+/*
+ * Utilities
+ */
+
+extern int string2ll(const char *s, size_t slen, long long *value);
+
+// This function is replaced by Redis.
+int string2ll(const char *s, size_t slen, long long *value){ return 0; }
+
 static RedisModuleType *WaveletTreeType;
 
 void *WaveletTreeType_Load(RedisModuleIO *rdb, int encver) {
