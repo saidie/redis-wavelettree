@@ -3,6 +3,7 @@
 #define MAX_HEIGHT (32)
 #define MAX_ALPHABET ((1<<(MAX_HEIGHT-1))-1)
 #define MIN_ALPHABET (1<<(MAX_HEIGHT-1))
+#define DESTRUCTIVE_BUILD 1
 
 #define FID_POWER_B(fid) 5
 #define FID_POWER_SB(fid) 9
@@ -155,52 +156,96 @@ wt_node *wt_node_new(wt_node *parent) {
     return node;
 }
 
-void _wt_build(wt_node *cur, const int32_t *data, int n, int32_t lower, int32_t upper) {
+void _wt_build(wt_node *cur, int32_t *data, int n, int32_t lower, int32_t upper) {
     cur->n = n;
 
-    if(lower+1 == upper) return;
+    if(lower == upper) return;
 
     int32_t mid = ((long long)lower + upper) >> 1;
-    int nbytes = (n >> 5) + ((n & 0x1F) ? 1 : 0);
+    uint32_t *bytes = calloc(FID_I2BI(fid, n) + ((n & FID_MASK_BI(fid)) ? 1 : 0), sizeof(uint32_t));
 
-    int32_t *buffer = malloc((n) * sizeof(int32_t));
-    uint32_t *bytes = calloc(nbytes, sizeof(uint32_t));
-
-    int i, j, k, nl = 0, nr = 0;
-    for(i = 0, k = 0; i < nbytes; ++i) {
-        for(j = 0; j < 32; ++j) {
-            bytes[i] <<= 1;
-            if (k < n) {
-                if (data[k] < mid) {
-                    buffer[nl++] = data[k];
-                    bytes[i] |= 1;
-                }
-                else {
-                    ++nr;
-                }
-                ++k;
-            }
+    int i, nl = 0;
+    uint32_t *bhead = bytes;
+    for(i = 0; i < n; ) {
+        *bhead <<= 1;
+        if (data[i] <= mid) {
+            nl++;
         }
+        else
+            *bhead |= 1;
+        ++i;
+        if (!(i & FID_MASK_BI(fid)))
+            ++bhead;
     }
+    if (i & FID_MASK_BI(fid))
+        *bhead <<= FID_NBIT_B(fid) - (i & FID_MASK_BI(fid));
 
     cur->fid = fid_new(bytes, n);
 
+    int j, carry, tmp;
+    for(i = 0; i < n; ++i) {
+        carry = data[i];
+        if (carry <= mid) {
+            j = fid_rank(cur->fid, 0, i);
+            carry += mid - lower + 1;
+            while (i != j) {
+                tmp = data[j];
+                data[j] = carry;
+                carry = tmp;
+
+                if (carry <= mid) {
+                    carry += mid - lower + 1;
+                    j = fid_rank(cur->fid, 0, j);
+                }
+                else {
+                    j = fid_rank(cur->fid, 1, j) + nl;
+                }
+            }
+            data[i] = carry;
+        }
+    }
+    for(i = 0; i < nl; ++i)
+        data[i] -= mid - lower + 1;
+
     if (nl) {
         cur->left = wt_node_new(cur);
-        _wt_build(cur->left, buffer, nl, lower, mid);
+        _wt_build(cur->left, data, nl, lower, mid);
     }
 
-    if (!nr) goto end;
+    if (n - nl) {
+        cur->right = wt_node_new(cur);
+        _wt_build(cur->right, data + nl, n - nl, mid+1, upper);
+    }
 
-    for(i = 0, j = 0; i < n; ++i)
-        if (data[i] >= mid)
-            buffer[j++] = data[i];
+    if (DESTRUCTIVE_BUILD) return;
 
-    cur->right = wt_node_new(cur);
-    _wt_build(cur->right, buffer, nr, mid, upper);
+    for (i = 0; i < nl; ++i)
+        data[i] += mid - lower + 1;
 
-end:
-    free(buffer);
+    for (i = 0; i < n; ++i) {
+        carry = data[i];
+        if (mid < carry) {
+            if (i < nl)
+                j = fid_select(cur->fid, 1, i + 1);
+            else
+                j = fid_select(cur->fid, 0, i - nl + 1);
+
+            while (i != j) {
+                tmp = data[j];
+                data[j] = carry - (mid - lower + 1);
+                carry = tmp;
+
+                if (j < nl)
+                    j = fid_select(cur->fid, 1, j + 1);
+                else
+                    j = fid_select(cur->fid, 0, j - nl + 1);
+            }
+            data[i] = carry - (mid - lower + 1);
+        }
+    }
+
+    for(i = 0; i < n - nl; ++i)
+        data[fid_select(cur->fid, 0, i+1)] += mid - lower + 1;
 }
 
 wt_tree *wt_build(int32_t *data, size_t len) {
