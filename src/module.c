@@ -25,6 +25,23 @@ void WaveletTreeType_Save(RedisModuleIO *rdb, void *value) {
         RedisModule_SaveSigned(rdb, wt_access(tree, i));
 }
 
+void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *value) {
+    wt_tree *tree = value;
+    uint32_t i, v;
+    char *buffer, *bhead;
+
+    bhead = buffer = RedisModule_Calloc((tree->len << 2) + 1, sizeof(char));
+    for(i = 0; i < tree->len; ++i) {
+        v = wt_access(tree, i);
+        *(bhead++) = (v >>= 24) & 0xFF;
+        *(bhead++) = (v >>= 16) & 0xFF;
+        *(bhead++) = (v >>= 8) & 0xFF;
+        *(bhead++) = v & 0xFF;
+    }
+    RedisModule_EmitAOF(aof, "wvltr.build", "sc", key, buffer);
+    RedisModule_Free(buffer);
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
