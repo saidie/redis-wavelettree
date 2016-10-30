@@ -11,8 +11,8 @@
 #endif
 
 #define MAX_HEIGHT (32)
-#define MAX_ALPHABET ((1<<(MAX_HEIGHT-1))-1)
-#define MIN_ALPHABET (1<<(MAX_HEIGHT-1))
+#define MAX_ALPHABET 2147483647
+#define MIN_ALPHABET -2147483648
 #define DESTRUCTIVE_BUILD 1
 
 #define FID_POWER_B(fid) 5
