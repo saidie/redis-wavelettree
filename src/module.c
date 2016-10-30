@@ -83,17 +83,59 @@ static inline int fid_rank(fid *fid, int b, size_t i) {
 }
 
 int fid_select(fid *fid, int b, int i) {
-    int l = 0, r = fid->n;
-    while (l < r) {
+    int l, r;
+    l = FID_I2SBI(fid, i);
+    r = FID_I2SBI(fid, fid->n) + 1;
+    while (l + 1 < r) {
         int m = (l + r) >> 1;
-        int rank = fid_rank(fid, m);
-        if (!b) rank = m - rank;
+        int rank = fid->rs[m];
+        if (!b) rank = FID_SBI2I(fid, m) - rank;
         if (i <= rank)
             r = m;
         else
-            l = m + 1;
+            l = m;
     }
-    return l;
+    if (b)
+        i -= fid->rs[l];
+    else
+        i -= FID_SBI2I(fid, l) - fid->rs[l];
+    r = FID_SBI2BI(fid, l + 1);
+    int offset = l = FID_SBI2BI(fid, l);
+    if (FID_I2BI(fid, fid->n) + 1 < r)
+        r = FID_I2BI(fid, fid->n) + 1;
+    while (l + 1 < r) {
+        int m = (l + r) >> 1;
+        int rank = fid->rb[m];
+        if (!b) rank = FID_BI2I(fid, m - offset) - rank;
+        if (i <= rank)
+            r = m;
+        else
+            l = m;
+    }
+    if (b)
+        i -= fid->rb[l];
+    else
+        i -= FID_BI2I(fid, l - offset) - fid->rb[l];
+    unsigned int byte = fid->bs[l], res = FID_BI2I(fid, l);
+    int mask = 0xFFFF0000;
+
+    l = 0; r = 32;
+
+    if (!b) byte = ~byte;
+    while(l + 1 < r) {
+        int m = (l + r) >> 1;
+        int rank = __builtin_popcount(byte & mask);
+        if (i <= rank) {
+            mask <<= (r - m) >> 1;
+            r = m;
+        }
+        else {
+            mask >>= (m - l) >> 1;
+            l = m;
+        }
+    }
+
+    return res + l;
 }
 
 typedef struct wt_node {
