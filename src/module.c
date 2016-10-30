@@ -42,6 +42,9 @@ void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *v
     RedisModule_Free(buffer);
 }
 
+void WaveletTreeType_Digest(RedisModuleDigest *digest, void *value) {
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
