@@ -35,12 +35,12 @@ int main(void) {
 
     int i;
     for(i = 0; i < 22; ++i)
-        printf("%d ", wt_access(t->root, i, MIN_ALPHABET, MAX_ALPHABET));
+        printf("%d ", wt_access(t->root, i));
     printf("\n");
 
-    printf("rank_3(S, 14) = %d\n", wt_rank(t->root, 3, 14, MIN_ALPHABET, MAX_ALPHABET));
-    printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t->root, 6, 6, 16, MIN_ALPHABET, MAX_ALPHABET));
-    printf("select(S, 3, 4) = %d\n", wt_select(t->root, 3, 4, MIN_ALPHABET, MAX_ALPHABET));
+    printf("rank_3(S, 14) = %d\n", wt_rank(t->root, 3, 14));
+    printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t->root, 6, 6, 16));
+    printf("select(S, 3, 4) = %d\n", wt_select(t->root, 3, 4));
 
     wt_free(t);
 
