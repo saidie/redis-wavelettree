@@ -289,19 +289,19 @@ int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
 }
 
 int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
-    while (lower+1 < upper) {
+    while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
 
-        if (value < mid) {
+        if (value <= mid) {
             if (!cur->left) return 0;
-            i = wt_map_left(cur, i);
+            i = fid_rank(cur->fid, 0, i);
             upper = mid;
             cur = cur->left;
         }
         else {
             if (!cur->right) return 0;
-            i = wt_map_right(cur, i);
-            lower = mid;
+            i = fid_rank(cur->fid, 1, i);
+            lower = mid + 1;
             cur = cur->right;
         }
     }
