@@ -72,5 +72,6 @@ int32_t wt_access(const wt_tree *cur, int i);
 int wt_rank(const wt_tree *cur, int32_t value, int i);
 int wt_select(const wt_tree *cur, int32_t v, int i);
 int wt_quantile(const wt_tree *cur, int k, int i, int j);
+int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
 
 #endif

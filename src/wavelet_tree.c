@@ -321,3 +321,83 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
     }
     return lower;
 }
+
+int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+    wt_node *cur = tree->root;
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET, mid;
+    while (cur && lower < upper) {
+        mid = ((long long)lower + upper) >> 1;
+        if (y <= mid) {
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else if (mid < x) {
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+        else
+            break;
+    }
+    if (!cur) return 0;
+    if (lower == upper) return j - i + 1;
+
+    wt_node *old_cur = cur;
+    int freq = 0, old_i = i, old_j = j;
+    int32_t old_lower = lower, old_upper = upper, old_mid = mid;
+
+    // left subtree
+    i = fid_rank(cur->fid, 0, i);
+    j = fid_rank(cur->fid, 0, j);
+    upper = mid;
+    cur = cur->left;
+    while (cur && lower < upper) {
+        mid = ((long long)lower + upper) >> 1;
+        if (x <= mid) {
+            if (cur->right)
+                freq += fid_rank(cur->fid, 1, j) - fid_rank(cur->fid, 1, i);
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+    }
+    if (cur) freq += j - i;
+
+    // right subtree
+    cur = old_cur;
+    i = fid_rank(cur->fid, 1, old_i);
+    j = fid_rank(cur->fid, 1, old_j);
+    lower = old_mid + 1;
+    upper = old_upper;
+    cur = cur->right;
+    while (cur && lower < upper) {
+        mid = ((long long)lower + upper) >> 1;
+        if (y <= mid) {
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            if (cur->left)
+                freq += fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+    }
+    if (cur) freq += j - i;
+
+    return freq;
+}
