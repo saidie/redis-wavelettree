@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "redismodule.h"
 #include "wavelet_tree.h"
 
@@ -64,6 +66,67 @@ void WaveletTreeType_Free(void *value) {
     wt_free(value);
 }
 
+/*
+ * Commands
+ */
+
+// wvltr.buildl DESTINATION KEY
+int WaveletTreeBuildFromList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 3)
+        return RedisModule_WrongArity(ctx);
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    wt_tree *tree = wt_new();
+    RedisModule_ModuleTypeSetValue(key, WaveletTreeType, tree);
+
+    RedisModuleCallReply *reply = RedisModule_Call(ctx, "LRANGE", "scc", argv[2], "0", "-1"), *subreply;
+    int replyType = RedisModule_CallReplyType(reply);
+    if(replyType == REDISMODULE_REPLY_ERROR) {
+        RedisModule_FreeCallReply(reply);
+        RedisModule_CloseKey(key);
+        return REDISMODULE_ERR;
+    }
+    assert(replyType == REDISMODULE_REPLY_ARRAY);
+
+    int i;
+    size_t len = RedisModule_CallReplyLength(reply), slen;
+    int32_t *data = RedisModule_Calloc(len, sizeof(int32_t));
+
+    const char *str;
+    long long value;
+    for(i = 0; i < len; ++i) {
+        subreply = RedisModule_CallReplyArrayElement(reply, i);
+        assert(subreply);
+        assert(RedisModule_CallReplyType(subreply) == REDISMODULE_REPLY_STRING);
+
+        str = RedisModule_CallReplyStringPtr(subreply, &slen);
+        string2ll(str, slen, &value);
+        data[i] = value;
+    }
+
+    wt_build(tree, data, len);
+
+    if (RedisModule_ReplyWithSimpleString(ctx, "OK") == REDISMODULE_ERR) {
+        RedisModule_Free(data);
+        RedisModule_FreeCallReply(reply);
+        RedisModule_CloseKey(key);
+
+        return REDISMODULE_ERR;
+    }
+
+    RedisModule_Free(data);
+    RedisModule_FreeCallReply(reply);
+    RedisModule_CloseKey(key);
+
+    return REDISMODULE_OK;
+}
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
