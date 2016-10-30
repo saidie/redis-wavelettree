@@ -68,9 +68,9 @@ typedef struct wt_tree {
 wt_tree *wt_new(void);
 void wt_build(wt_tree *tree, int32_t *data, size_t len);
 void wt_free(wt_tree *tree);
-int32_t wt_access(wt_node *cur, int i);
-int wt_rank(wt_node *cur, int32_t value, int i);
-int wt_select(const wt_node *cur, int32_t v, int i);
-int wt_quantile(wt_node *cur, int k, int i, int j);
+int32_t wt_access(const wt_tree *cur, int i);
+int wt_rank(const wt_tree *cur, int32_t value, int i);
+int wt_select(const wt_tree *cur, int32_t v, int i);
+int wt_quantile(const wt_tree *cur, int k, int i, int j);
 
 #endif
