@@ -15,7 +15,8 @@ int main(void) {
     int32_t array[] = {
         3, 3, 9, 1, 2, 1, 7, 6, 4, 8, 9, 4, 3, 7, 5, 9, 2, 7, 3, 5, 1, 3
     };
-    wt_tree *t = wt_build(array, 22);
+    wt_tree *t = wt_new();
+    wt_build(t, array, 22);
 
     int i;
     for(i = 0; i < 22; ++i)
