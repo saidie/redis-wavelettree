@@ -8,6 +8,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     return REDISMODULE_OK;
 }
 
+#ifdef DEBUG
+
 #include <stdio.h>
 int main(void) {
     int32_t array[] = {
@@ -28,3 +30,5 @@ int main(void) {
 
     return 0;
 }
+
+#endif
