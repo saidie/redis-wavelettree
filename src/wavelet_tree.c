@@ -226,7 +226,8 @@ void wt_free(wt_tree *tree) {
     free(tree);
 }
 
-int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
+int32_t wt_access(wt_node *cur, int i) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
         if (fid_rank(cur->fid, 0, i+1) - fid_rank(cur->fid, 0, i)) {
@@ -243,7 +244,8 @@ int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
     return lower;
 }
 
-int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
+int wt_rank(wt_node *cur, int32_t value, int i) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
 
@@ -264,7 +266,8 @@ int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper) {
 }
 
 
-int wt_select(const wt_node *cur, int32_t v, int i, int32_t lower, int32_t upper) {
+int wt_select(const wt_node *cur, int32_t v, int i) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
 
@@ -292,7 +295,8 @@ int wt_select(const wt_node *cur, int32_t v, int i, int32_t lower, int32_t upper
     return i;
 }
 
-int wt_quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
+int wt_quantile(wt_node *cur, int k, int i, int j) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
 
