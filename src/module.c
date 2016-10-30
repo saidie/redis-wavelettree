@@ -40,7 +40,7 @@ typedef struct fid {
     size_t n;
     uint32_t *bs;
     uint32_t *rs;
-    uint32_t *rb;
+    uint16_t *rb;
 } fid;
 
 fid *fid_new(uint32_t *bytes, size_t n) {
@@ -48,10 +48,11 @@ fid *fid_new(uint32_t *bytes, size_t n) {
     fid->bs = bytes;
     fid->n = n;
     fid->rs = calloc(FID_I2SBI(fid, fid->n) + 1, sizeof(uint32_t));
-    fid->rb = calloc(FID_I2BI(fid, fid->n) + 1, sizeof(uint32_t));
+    fid->rb = calloc(FID_I2BI(fid, fid->n) + 1, sizeof(uint16_t));
 
     int i, srank = 0, brank = 0;
-    uint32_t *rs = fid->rs, *rb = fid->rb;
+    uint32_t *rs = fid->rs;
+    uint16_t *rb = fid->rb;
     *(rs++) = 0;
     *(rb++) = 0;
     for(i = 1; i <= FID_I2BI(fid, fid->n); ++i) {
