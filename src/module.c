@@ -1,6 +1,8 @@
 #include "redismodule.h"
 #include "wavelet_tree.h"
 
+static RedisModuleType *WaveletTreeType;
+
 void *WaveletTreeType_Load(RedisModuleIO *rdb, int encver) {
     if (encver != 0) return NULL;
 
@@ -51,6 +53,11 @@ void WaveletTreeType_Free(void *value) {
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    WaveletTreeType = RedisModule_CreateDataType(ctx, "waveletre", 0, WaveletTreeType_Load,
+        WaveletTreeType_Save, WaveletTreeType_Rewrite, WaveletTreeType_Digest, WaveletTreeType_Free);
+    if (WaveletTreeType == NULL)
         return REDISMODULE_ERR;
 
     return REDISMODULE_OK;
