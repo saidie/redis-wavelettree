@@ -77,9 +77,9 @@ void fid_free(fid *fid) {
     free(fid);
 }
 
-int fid_rank(fid *fid, size_t i) {
-    uint32_t b = (i & 0x1F) ? (fid->bs[i >> 5] >> (32 - (i & 0x1F)) << (32 - (i & 0x1F))) : 0;
-    return fid->rs[i / fid->ssize] + fid->rb[i >> 5] + __builtin_popcount(b);
+static inline int fid_rank(fid *fid, int b, size_t i) {
+    int res = fid->rs[FID_I2SBI(fid, i)] + fid->rb[FID_I2BI(fid, i)] + __builtin_popcount(FID_CHOP_BLOCK_I(fid, fid->bs[FID_I2BI(fid, i)], i));
+    return b ? res : i - res;
 }
 
 int fid_select(fid *fid, int b, int i) {
