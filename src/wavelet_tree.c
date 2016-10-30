@@ -109,6 +109,13 @@ wt_node *wt_node_new(wt_node *parent) {
     return node;
 }
 
+wt_tree *wt_new(void) {
+    wt_tree *tree;
+    tree = calloc(1, sizeof(*tree));
+    tree->root = wt_node_new(NULL);
+    return tree;
+}
+
 void _wt_build(wt_node *cur, int32_t *data, int n, int32_t lower, int32_t upper) {
     cur->n = n;
 
@@ -201,15 +208,10 @@ void _wt_build(wt_node *cur, int32_t *data, int n, int32_t lower, int32_t upper)
         data[fid_select(cur->fid, 0, i+1)] += mid - lower + 1;
 }
 
-wt_tree *wt_build(int32_t *data, size_t len) {
-    wt_tree *tree;
-    tree = malloc(sizeof(*tree));
+void wt_build(wt_tree *tree, int32_t *data, size_t len) {
     tree->len = len;
-    tree->root = wt_node_new(NULL);
 
     _wt_build(tree->root, data, len, MIN_ALPHABET, MAX_ALPHABET);
-
-    return tree;
 }
 
 void wt_node_free(wt_node *cur) {

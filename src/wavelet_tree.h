@@ -65,7 +65,8 @@ typedef struct wt_tree {
     size_t len;
 } wt_tree;
 
-wt_tree *wt_build(int32_t *data, size_t len);
+wt_tree *wt_new(void);
+void wt_build(wt_tree *tree, int32_t *data, size_t len);
 void wt_free(wt_tree *tree);
 int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper);
 int wt_rank(wt_node *cur, int32_t value, int i, int32_t lower, int32_t upper);
