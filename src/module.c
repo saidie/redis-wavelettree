@@ -337,21 +337,21 @@ int wt_select(const wt_node *cur, int32_t v, int i, int32_t lower, int32_t upper
 }
 
 int wt_quantile(wt_node *cur, int k, int i, int j, int32_t lower, int32_t upper) {
-    while (lower+1 < upper) {
+    while (lower < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
 
-        int ln = fid_rank(cur->fid, j) - fid_rank(cur->fid, i);
+        int ln = fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
         if (k <= ln) {
-            i = wt_map_left(cur, i);
-            j = wt_map_left(cur, j);
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
             upper = mid;
             cur = cur->left;
         }
         else {
             k -= ln;
-            i = wt_map_right(cur, i);
-            j = wt_map_right(cur, j);
-            lower = mid;
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
             cur = cur->right;
         }
     }
