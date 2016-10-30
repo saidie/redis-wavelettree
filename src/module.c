@@ -271,14 +271,6 @@ void wt_tree_free(wt_tree *tree) {
     free(tree);
 }
 
-static inline int wt_map_left(wt_node *cur, int i) {
-    return fid_rank(cur->fid, i);
-}
-
-static inline int wt_map_right(wt_node *cur, int i) {
-    return i - fid_rank(cur->fid, i);
-}
-
 int32_t wt_access(wt_node *cur, int i, int32_t lower, int32_t upper) {
     while (lower+1 < upper) {
         int32_t mid = ((long long)lower + upper) >> 1;
