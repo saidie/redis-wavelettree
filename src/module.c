@@ -16,6 +16,15 @@ void *WaveletTreeType_Load(RedisModuleIO *rdb, int encver) {
     return tree;
 }
 
+void WaveletTreeType_Save(RedisModuleIO *rdb, void *value) {
+    wt_tree *tree = value;
+    uint32_t i;
+
+    RedisModule_SaveUnsigned(rdb, tree->len);
+    for(i = 0; i < tree->len; ++i)
+        RedisModule_SaveSigned(rdb, wt_access(tree, i));
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
