@@ -322,6 +322,10 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
     return lower;
 }
 
+#define RANGE_FLAG_LEFT  0x1
+#define RANGE_FLAG_RIGHT 0x2
+#define RANGE_FLAG_BOTH (RANGE_FLAG_LEFT|RANGE_FLAG_RIGHT)
+
 static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
     int32_t mid;
     while (cur && *lower < *upper) {
@@ -344,13 +348,13 @@ static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int3
     return cur;
 }
 
-int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int right, int32_t lower, int32_t upper) {
+int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper) {
     int freq = 0;
     int32_t mid;
     while (cur && lower < upper) {
         mid = MID(lower, upper);
         if (boundary <= mid) {
-            if (right && cur->right)
+            if ((flags & RANGE_FLAG_RIGHT) && cur->right)
                 freq += fid_rank(cur->fid, 1, j) - fid_rank(cur->fid, 1, i);
             i = fid_rank(cur->fid, 0, i);
             j = fid_rank(cur->fid, 0, j);
@@ -358,7 +362,7 @@ int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int 
             cur = cur->left;
         }
         else {
-            if (!right && cur->left)
+            if ((flags & RANGE_FLAG_LEFT) && cur->left)
                 freq += fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
             i = fid_rank(cur->fid, 1, i);
             j = fid_rank(cur->fid, 1, j);
@@ -376,7 +380,8 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     if (!cur) return 0;
     if (lower == upper) return j - i;
 
-    return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, 1, lower, MID(lower, upper)) +
-        _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, 0, MID(lower, upper) + 1, upper);
+    return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper)) +
+        _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper);
+}
 }
 
