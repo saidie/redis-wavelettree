@@ -322,42 +322,35 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
     return lower;
 }
 
-int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
-    wt_node *cur = tree->root;
-    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET, mid;
-    while (cur && lower < upper) {
-        mid = ((long long)lower + upper) >> 1;
+static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
+    int32_t mid;
+    while (cur && *lower < *upper) {
+        mid = ((long long)*lower + *upper) >> 1;
         if (y <= mid) {
-            i = fid_rank(cur->fid, 0, i);
-            j = fid_rank(cur->fid, 0, j);
-            upper = mid;
+            *i = fid_rank(cur->fid, 0, *i);
+            *j = fid_rank(cur->fid, 0, *j);
+            *upper = mid;
             cur = cur->left;
         }
         else if (mid < x) {
-            i = fid_rank(cur->fid, 1, i);
-            j = fid_rank(cur->fid, 1, j);
-            lower = mid + 1;
+            *i = fid_rank(cur->fid, 1, *i);
+            *j = fid_rank(cur->fid, 1, *j);
+            *lower = mid + 1;
             cur = cur->right;
         }
         else
             break;
     }
-    if (!cur) return 0;
-    if (lower == upper) return j - i + 1;
+    return cur;
+}
 
-    wt_node *old_cur = cur;
-    int freq = 0, old_i = i, old_j = j;
-    int32_t old_lower = lower, old_upper = upper, old_mid = mid;
-
-    // left subtree
-    i = fid_rank(cur->fid, 0, i);
-    j = fid_rank(cur->fid, 0, j);
-    upper = mid;
-    cur = cur->left;
+int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int right, int32_t lower, int32_t upper) {
+    int freq = 0;
+    int32_t mid;
     while (cur && lower < upper) {
         mid = ((long long)lower + upper) >> 1;
-        if (x <= mid) {
-            if (cur->right)
+        if (boundary <= mid) {
+            if (right && cur->right)
                 freq += fid_rank(cur->fid, 1, j) - fid_rank(cur->fid, 1, i);
             i = fid_rank(cur->fid, 0, i);
             j = fid_rank(cur->fid, 0, j);
@@ -365,31 +358,7 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
             cur = cur->left;
         }
         else {
-            i = fid_rank(cur->fid, 1, i);
-            j = fid_rank(cur->fid, 1, j);
-            lower = mid + 1;
-            cur = cur->right;
-        }
-    }
-    if (cur) freq += j - i;
-
-    // right subtree
-    cur = old_cur;
-    i = fid_rank(cur->fid, 1, old_i);
-    j = fid_rank(cur->fid, 1, old_j);
-    lower = old_mid + 1;
-    upper = old_upper;
-    cur = cur->right;
-    while (cur && lower < upper) {
-        mid = ((long long)lower + upper) >> 1;
-        if (y <= mid) {
-            i = fid_rank(cur->fid, 0, i);
-            j = fid_rank(cur->fid, 0, j);
-            upper = mid;
-            cur = cur->left;
-        }
-        else {
-            if (cur->left)
+            if (!right && cur->left)
                 freq += fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
             i = fid_rank(cur->fid, 1, i);
             j = fid_rank(cur->fid, 1, j);
@@ -398,6 +367,16 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
         }
     }
     if (cur) freq += j - i;
-
     return freq;
 }
+
+int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
+    const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
+    if (!cur) return 0;
+    if (lower == upper) return j - i + 1;
+
+    return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, 1, lower, ((long long)lower + upper) >> 1) +
+        _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, 0, (((long long)lower + upper) >> 1) + 1, upper);
+}
+
