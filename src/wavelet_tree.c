@@ -48,7 +48,7 @@ int fid_select(fid *fid, int b, int i) {
     l = FID_I2SBI(fid, i);
     r = FID_I2SBI(fid, fid->n) + 1;
     while (l + 1 < r) {
-        int m = (l + r) >> 1;
+        int m = MID(l, r);
         int rank = fid->rs[m];
         if (!b) rank = FID_SBI2I(fid, m) - rank;
         if (i <= rank)
@@ -65,7 +65,7 @@ int fid_select(fid *fid, int b, int i) {
     if (FID_I2BI(fid, fid->n) + 1 < r)
         r = FID_I2BI(fid, fid->n) + 1;
     while (l + 1 < r) {
-        int m = (l + r) >> 1;
+        int m = MID(l, r);
         int rank = fid->rb[m];
         if (!b) rank = FID_BI2I(fid, m - offset) - rank;
         if (i <= rank)
@@ -84,7 +84,7 @@ int fid_select(fid *fid, int b, int i) {
 
     if (!b) byte = ~byte;
     while(l + 1 < r) {
-        int m = (l + r) >> 1;
+        int m = MID(l, r);
         int rank = __builtin_popcount(byte & mask);
         if (i <= rank) {
             mask <<= (r - m) >> 1;
@@ -121,7 +121,7 @@ void _wt_build(wt_node *cur, int32_t *data, int n, int32_t lower, int32_t upper)
 
     if(lower == upper) return;
 
-    int32_t mid = ((long long)lower + upper) >> 1;
+    int32_t mid = MID(lower, upper);
     uint32_t *bytes = calloc(FID_I2BI(fid, n) + ((n & FID_MASK_BI(fid)) ? 1 : 0), sizeof(uint32_t));
 
     int i, nl = 0;
@@ -230,7 +230,7 @@ int32_t wt_access(const wt_tree *tree, int i) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
-        int32_t mid = ((long long)lower + upper) >> 1;
+        int32_t mid = MID(lower, upper);
         if (fid_rank(cur->fid, 0, i+1) - fid_rank(cur->fid, 0, i)) {
             i = fid_rank(cur->fid, 0, i);
             upper = mid;
@@ -249,7 +249,7 @@ int wt_rank(const wt_tree *tree, int32_t value, int i) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
-        int32_t mid = ((long long)lower + upper) >> 1;
+        int32_t mid = MID(lower, upper);
 
         if (value <= mid) {
             if (!cur->left) return 0;
@@ -272,7 +272,7 @@ int wt_select(const wt_tree *tree, int32_t v, int i) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
-        int32_t mid = ((long long)lower + upper) >> 1;
+        int32_t mid = MID(lower, upper);
 
         if (v <= mid) {
             if (!cur->left) return -1;
@@ -302,7 +302,7 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
-        int32_t mid = ((long long)lower + upper) >> 1;
+        int32_t mid = MID(lower, upper);
 
         int ln = fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
         if (k <= ln) {
@@ -325,7 +325,7 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
 static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
     int32_t mid;
     while (cur && *lower < *upper) {
-        mid = ((long long)*lower + *upper) >> 1;
+        mid = MID(*lower, *upper);
         if (y <= mid) {
             *i = fid_rank(cur->fid, 0, *i);
             *j = fid_rank(cur->fid, 0, *j);
@@ -348,7 +348,7 @@ int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int 
     int freq = 0;
     int32_t mid;
     while (cur && lower < upper) {
-        mid = ((long long)lower + upper) >> 1;
+        mid = MID(lower, upper);
         if (boundary <= mid) {
             if (right && cur->right)
                 freq += fid_rank(cur->fid, 1, j) - fid_rank(cur->fid, 1, i);
@@ -376,7 +376,7 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     if (!cur) return 0;
     if (lower == upper) return j - i + 1;
 
-    return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, 1, lower, ((long long)lower + upper) >> 1) +
-        _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, 0, (((long long)lower + upper) >> 1) + 1, upper);
+    return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, 1, lower, MID(lower, upper)) +
+        _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, 0, MID(lower, upper) + 1, upper);
 }
 

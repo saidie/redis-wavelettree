@@ -39,6 +39,8 @@
 
 #define FID_CHOP_BLOCK_I(fid, b, i) ((b) & FID_MASK_BLOCK_I(fid, i))
 
+#define MID(l, r) (((int64_t)(l) + (int64_t)(r)) >> 1)
+
 /*
  * Fully Indexable Dictionary
  */
