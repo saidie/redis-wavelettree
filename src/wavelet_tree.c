@@ -374,7 +374,7 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
     if (!cur) return 0;
-    if (lower == upper) return j - i + 1;
+    if (lower == upper) return j - i;
 
     return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, 1, lower, MID(lower, upper)) +
         _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, 0, MID(lower, upper) + 1, upper);
