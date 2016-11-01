@@ -251,7 +251,7 @@ int WaveletTreeRangeFreq_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     if (RedisModule_StringToLongLong(argv[4], &min) != REDISMODULE_OK) {
         return REDISMODULE_ERR;
     }
-    if (RedisModule_StringToLongLong(argv[4], &max) != REDISMODULE_OK) {
+    if (RedisModule_StringToLongLong(argv[5], &max) != REDISMODULE_OK) {
         return REDISMODULE_ERR;
     }
 
