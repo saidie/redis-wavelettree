@@ -383,5 +383,43 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper)) +
         _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper);
 }
+
+void _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper,
+    void (*callback)(void*, int32_t, int), void *user_data) {
+    int32_t mid;
+    while (cur && lower < upper) {
+        mid = MID(lower, upper);
+        if (boundary <= mid) {
+            if ((flags & RANGE_FLAG_RIGHT) && cur->right)
+                _wt_range_list_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), boundary, RANGE_FLAG_BOTH, mid+1, upper, callback, user_data);
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else {
+            if ((flags & RANGE_FLAG_LEFT) && cur->left)
+                _wt_range_list_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), boundary, RANGE_FLAG_BOTH, lower, mid, callback, user_data);
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+    }
+    if (cur) {
+        callback(user_data, lower, j - i);
+    }
 }
 
+void wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data) {
+    int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
+    const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
+    if (!cur) return;
+    if (lower == upper) {
+        callback(user_data, lower, j - i);
+        return;
+    }
+
+    _wt_range_list_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper), callback, user_data);
+    _wt_range_list_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper, callback, user_data);
+}
