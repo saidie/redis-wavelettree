@@ -402,6 +402,10 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             WaveletTreeRangeList_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
+    if (RedisModule_CreateCommand(ctx, "wvltr.prevvalue",
+            WaveletTreePrevValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
     return REDISMODULE_OK;
 }
 
