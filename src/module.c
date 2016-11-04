@@ -388,6 +388,7 @@ int main(void) {
     printf("select(S, 3, 4) = %d\n", wt_select(t, 3, 4));
     printf("range_freq(S, 0, 8, 3, 6) = %d\n", wt_range_freq(t, 0, 8, 3, 6));
     printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, range_callback, NULL));
+    printf("prev_value(15, 19, 3, 7) = %d\n", wt_prev_value(t, 15, 19, 3, 7));
 
     wt_free(t);
 

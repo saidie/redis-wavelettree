@@ -430,7 +430,7 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     y -= 1;
     const wt_node *cur = tree->root, *last_left_node = NULL;
     int last_left_i, last_left_j;
-    int32_t mid, last_left_lower, last_left_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;;
+    int32_t mid, last_left_lower, last_left_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (cur && lower < upper) {
         mid = MID(lower, upper);
         if (y <= mid) {
