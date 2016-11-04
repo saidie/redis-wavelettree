@@ -425,3 +425,64 @@ int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void 
     return _wt_range_list_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper), callback, user_data) +
         _wt_range_list_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper, callback, user_data);
 }
+
+int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+    y -= 1;
+    const wt_node *cur = tree->root, *last_left_node = NULL;
+    int last_left_i, last_left_j;
+    int32_t mid, last_left_lower, last_left_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;;
+    while (cur && lower < upper) {
+        mid = MID(lower, upper);
+        if (y <= mid) {
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else if (mid < x) {
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+        else {
+            if (cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
+                last_left_node = cur->left;
+                last_left_lower = lower;
+                last_left_upper = mid;
+                last_left_i = fid_rank(cur->fid, 0, i);
+                last_left_j = fid_rank(cur->fid, 0, j);
+            }
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid+1;
+            cur = cur->right;
+        }
+    }
+    if (cur && i < j) return lower;
+
+    if (last_left_node) {
+        i = last_left_i;
+        j = last_left_j;
+        lower = last_left_lower;
+        upper = last_left_upper;
+        cur = last_left_node;
+        while (lower < upper) {
+            mid = MID(lower, upper);
+            if (cur->right) {
+                i = fid_rank(cur->fid, 1, i);
+                j = fid_rank(cur->fid, 1, j);
+                lower = mid + 1;
+                cur = cur->right;
+            }
+            else {
+                i = fid_rank(cur->fid, 0, i);
+                j = fid_rank(cur->fid, 0, j);
+                upper = mid;
+                cur = cur->left;
+            }
+        }
+        if (i < j) return lower;
+    }
+    return y + 1;
+}
