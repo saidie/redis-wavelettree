@@ -486,3 +486,64 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     }
     return y + 1;
 }
+
+int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+    x += 1;
+    const wt_node *cur = tree->root, *last_right_node = NULL;
+    int last_right_i, last_right_j;
+    int32_t mid, last_right_lower, last_right_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;
+    while (cur && lower < upper) {
+        mid = MID(lower, upper);
+        if (y <= mid) {
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+        else if (mid < x) {
+            i = fid_rank(cur->fid, 1, i);
+            j = fid_rank(cur->fid, 1, j);
+            lower = mid + 1;
+            cur = cur->right;
+        }
+        else {
+            if (cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
+                last_right_node = cur->right;
+                last_right_lower = mid + 1;
+                last_right_upper = upper;
+                last_right_i = fid_rank(cur->fid, 1, i);
+                last_right_j = fid_rank(cur->fid, 1, j);
+            }
+            i = fid_rank(cur->fid, 0, i);
+            j = fid_rank(cur->fid, 0, j);
+            upper = mid;
+            cur = cur->left;
+        }
+    }
+    if (cur && i < j) return lower;
+
+    if (last_right_node) {
+        i = last_right_i;
+        j = last_right_j;
+        lower = last_right_lower;
+        upper = last_right_upper;
+        cur = last_right_node;
+        while (lower < upper) {
+            mid = MID(lower, upper);
+            if (cur->right) {
+                i = fid_rank(cur->fid, 1, i);
+                j = fid_rank(cur->fid, 1, j);
+                lower = mid + 1;
+                cur = cur->right;
+            }
+            else {
+                i = fid_rank(cur->fid, 0, i);
+                j = fid_rank(cur->fid, 0, j);
+                upper = mid;
+                cur = cur->left;
+            }
+        }
+        if (i < j) return lower;
+    }
+    return x - 1;
+}
