@@ -483,6 +483,23 @@ int main(void) {
 
     wt_free(t);
 
+    // heap
+    heap *heap = heap_new();
+    int score;
+    void *value;
+    heap_push(heap, 5, "abc");
+    heap_push(heap, 2, "def");
+    heap_push(heap, 8, "ghi");
+    heap_push(heap, 9, "jkl");
+    heap_push(heap, 8, "mno");
+    heap_push(heap, 1, "pqr");
+    heap_push(heap, 4, "stu");
+    for(i = 0; i < 5; ++i) {
+        if (heap_pop(heap, &score, &value))
+            printf("%d %s\n", score, value);
+    }
+    printf("heap len = %zu\n", heap_len(heap));
+
     return 0;
 }
 
