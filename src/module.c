@@ -198,6 +198,218 @@ int WaveletTreeSelect_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
     return REDISMODULE_OK;
 }
 
+// wvltr.quantile KEY FROM TO COUNT
+int WaveletTreeQuantile_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 5)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, count;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &count) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    int res = wt_quantile(tree, count, from, to);
+
+    RedisModule_CloseKey(key);
+    RedisModule_ReplyWithLongLong(ctx, res);
+    return REDISMODULE_OK;
+}
+
+// wvltr.rangefreq KEY FROM TO MIN MAX
+int WaveletTreeRangeFreq_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 6)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, min, max;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &min) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[5], &max) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    int res = wt_range_freq(tree, from, to, min, max);
+
+    RedisModule_CloseKey(key);
+    RedisModule_ReplyWithLongLong(ctx, res);
+    return REDISMODULE_OK;
+}
+
+void _rangelist_callback(void *user_data, int32_t value, int count) {
+    RedisModuleCtx *ctx = user_data;
+
+    RedisModule_ReplyWithArray(ctx, 2);
+    RedisModule_ReplyWithLongLong(ctx, value);
+    RedisModule_ReplyWithLongLong(ctx, count);
+}
+
+// wvltr.rangelist KEY FROM TO MIN MAX
+int WaveletTreeRangeList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 6)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, min, max;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &min) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[5], &max) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    RedisModule_CloseKey(key);
+
+    RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
+    int len = wt_range_list(tree, from, to, min, max, _rangelist_callback, ctx);
+    RedisModule_ReplySetArrayLength(ctx, len);
+
+    return REDISMODULE_OK;
+}
+
+// wvltr.prevvalue KEY FROM TO MIN MAX
+int WaveletTreePrevValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 6)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, min, max;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &min) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[5], &max) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    int res = wt_range_prev_value(tree, from, to, min, max);
+
+    RedisModule_CloseKey(key);
+    RedisModule_ReplyWithLongLong(ctx, res);
+    return REDISMODULE_OK;
+}
+
+// wvltr.nextvalue KEY FROM TO MIN MAX
+int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 6)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, min, max;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &min) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[5], &max) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    int res = wt_range_next_value(tree, from, to, min, max);
+
+    RedisModule_CloseKey(key);
+    RedisModule_ReplyWithLongLong(ctx, res);
+    return REDISMODULE_OK;
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
@@ -219,10 +431,34 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             WaveletTreeSelect_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
+    if (RedisModule_CreateCommand(ctx, "wvltr.quantile",
+            WaveletTreeQuantile_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    if (RedisModule_CreateCommand(ctx, "wvltr.rangefreq",
+            WaveletTreeRangeFreq_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    if (RedisModule_CreateCommand(ctx, "wvltr.rangelist",
+            WaveletTreeRangeList_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    if (RedisModule_CreateCommand(ctx, "wvltr.prevvalue",
+            WaveletTreePrevValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    if (RedisModule_CreateCommand(ctx, "wvltr.nextvalue",
+            WaveletTreeNextValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
     return REDISMODULE_OK;
 }
 
 #ifdef DEBUG
+
+void range_callback(void *user_data, int32_t value, int count) {
+    printf("  value = %d, count = %d\n", value, count);
+}
 
 #include <stdio.h>
 int main(void) {
@@ -240,6 +476,10 @@ int main(void) {
     printf("rank_3(S, 14) = %d\n", wt_rank(t, 3, 14));
     printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t, 6, 6, 16));
     printf("select(S, 3, 4) = %d\n", wt_select(t, 3, 4));
+    printf("range_freq(S, 0, 8, 3, 6) = %d\n", wt_range_freq(t, 0, 8, 3, 6));
+    printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, range_callback, NULL));
+    printf("prev_value(15, 19, 3, 7) = %d\n", wt_prev_value(t, 15, 19, 3, 7));
+    printf("next_value(15, 19, 3, 7) = %d\n", wt_next_value(t, 15, 19, 3, 7));
 
     wt_free(t);
 
