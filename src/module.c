@@ -277,7 +277,7 @@ int WaveletTreeRangeFreq_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     return REDISMODULE_OK;
 }
 
-void _rangelist_callback(void *user_data, int32_t value, int count) {
+void _value_count_callback(void *user_data, int32_t value, int count) {
     RedisModuleCtx *ctx = user_data;
 
     RedisModule_ReplyWithArray(ctx, 2);
@@ -322,7 +322,7 @@ int WaveletTreeRangeList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     RedisModule_CloseKey(key);
 
     RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
-    int len = wt_range_list(tree, from, to, min, max, _rangelist_callback, ctx);
+    int len = wt_range_list(tree, from, to, min, max, _value_count_callback, ctx);
     RedisModule_ReplySetArrayLength(ctx, len);
 
     return REDISMODULE_OK;
@@ -410,6 +410,46 @@ int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     return REDISMODULE_OK;
 }
 
+// wvltr.topk KEY FROM TO K
+int WaveletTreeTopK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 5)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, k;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &k) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    RedisModule_CloseKey(key);
+
+    RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
+    int len = wt_topk(tree, from, to, k, _value_count_callback, ctx);
+    RedisModule_ReplySetArrayLength(ctx, len);
+
+    return REDISMODULE_OK;
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
@@ -451,12 +491,16 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             WaveletTreeNextValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
+    if (RedisModule_CreateCommand(ctx, "wvltr.topk",
+            WaveletTreeTopK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
     return REDISMODULE_OK;
 }
 
 #ifdef DEBUG
 
-void range_callback(void *user_data, int32_t value, int count) {
+void value_count_callback(void *user_data, int32_t value, int count) {
     printf("  value = %d, count = %d\n", value, count);
 }
 
@@ -477,11 +521,30 @@ int main(void) {
     printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t, 6, 6, 16));
     printf("select(S, 3, 4) = %d\n", wt_select(t, 3, 4));
     printf("range_freq(S, 0, 8, 3, 6) = %d\n", wt_range_freq(t, 0, 8, 3, 6));
-    printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, range_callback, NULL));
+    printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, value_count_callback, NULL));
     printf("prev_value(15, 19, 3, 7) = %d\n", wt_prev_value(t, 15, 19, 3, 7));
     printf("next_value(15, 19, 3, 7) = %d\n", wt_next_value(t, 15, 19, 3, 7));
+    printf("topk(0, 22, 5) = %d\n", wt_topk(t, 0, 22, 5, value_count_callback, NULL));
 
     wt_free(t);
+
+    // heap
+    heap *heap = heap_new();
+    int score;
+    void *value;
+    heap_push(heap, 5, "abc");
+    heap_push(heap, 2, "def");
+    heap_push(heap, 8, "ghi");
+    heap_push(heap, 9, "jkl");
+    heap_push(heap, 8, "mno");
+    heap_push(heap, 1, "pqr");
+    heap_push(heap, 4, "stu");
+    for(i = 0; i < 5; ++i) {
+        if (heap_pop(heap, &score, &value))
+            printf("%d %s\n", score, value);
+    }
+    printf("heap len = %zu\n", heap_len(heap));
+    heap_free(heap, NULL);
 
     return 0;
 }
