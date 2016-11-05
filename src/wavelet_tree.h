@@ -1,15 +1,7 @@
 #ifndef __WAVELET_TREE_H__
 #define __WAVELET_TREE_H__
 
-#ifdef DEBUG
-#include <stdlib.h>
-#else
-#include "redismodule.h"
-#define malloc RedisModule_Malloc
-#define calloc RedisModule_Calloc
-#define free RedisModule_Free
-#endif
-
+#include "common.h"
 #include "heap.h"
 
 #define MAX_HEIGHT (32)

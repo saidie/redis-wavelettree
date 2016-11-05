@@ -1,15 +1,7 @@
 #ifndef __HEAP_H__
 #define __HEAP_H__
 
-#ifdef DEBUG
-#include <stdlib.h>
-#else
-#include "redismodule.h"
-#define malloc RedisModule_Malloc
-#define calloc RedisModule_Calloc
-#define realloc RedisModule_Realloc
-#define free RedisModule_Free
-#endif
+#include "common.h"
 
 typedef struct heap_node {
     int score;
