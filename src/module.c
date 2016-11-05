@@ -277,7 +277,7 @@ int WaveletTreeRangeFreq_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     return REDISMODULE_OK;
 }
 
-void _rangelist_callback(void *user_data, int32_t value, int count) {
+void _value_count_callback(void *user_data, int32_t value, int count) {
     RedisModuleCtx *ctx = user_data;
 
     RedisModule_ReplyWithArray(ctx, 2);
@@ -322,7 +322,7 @@ int WaveletTreeRangeList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     RedisModule_CloseKey(key);
 
     RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
-    int len = wt_range_list(tree, from, to, min, max, _rangelist_callback, ctx);
+    int len = wt_range_list(tree, from, to, min, max, _value_count_callback, ctx);
     RedisModule_ReplySetArrayLength(ctx, len);
 
     return REDISMODULE_OK;
