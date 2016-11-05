@@ -80,5 +80,6 @@ int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
 int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data);
 int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
 int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
+int wt_topk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data);
 
 #endif

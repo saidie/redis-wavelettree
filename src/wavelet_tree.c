@@ -547,3 +547,61 @@ int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     }
     return x - 1;
 }
+
+// Priority queue element for wt_topk
+typedef struct topk_qe {
+    const wt_node *node;
+    int i, j;
+    int32_t lower, upper;
+} topk_qe;
+
+topk_qe *topk_qe_new(const wt_node *node, int i, int j, int32_t lower, int32_t upper) {
+    topk_qe *qe = malloc(sizeof(*qe));
+    qe->node = node;
+    qe->i = i;
+    qe->j = j;
+    qe->lower = lower;
+    qe->upper = upper;
+    return qe;
+}
+
+void topk_qe_free(topk_qe *qe) {
+    free(qe);
+}
+
+int wt_topk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+    heap *q = heap_new();
+    heap_push(q, j - i, topk_qe_new(tree->root, i, j, MIN_ALPHABET, MAX_ALPHABET));
+
+    int score, count = 0, ni, nj;
+    topk_qe *qe;
+    int32_t mid;
+    while (count < k && heap_len(q) > 0) {
+        heap_pop(q, &score, (void**)&qe);
+
+        if (qe->lower == qe->upper) {
+            ++count;
+            callback(user_data, qe->lower, qe->j - qe->i);
+        }
+        else {
+            mid = MID(qe->lower, qe->upper);
+
+            // left
+            ni = fid_rank(qe->node->fid, 0, qe->i);
+            nj = fid_rank(qe->node->fid, 0, qe->j);
+            if (ni < nj)
+                heap_push(q, nj - ni, topk_qe_new(qe->node->left, ni, nj, qe->lower, mid));
+
+            // right
+            ni = fid_rank(qe->node->fid, 1, qe->i);
+            nj = fid_rank(qe->node->fid, 1, qe->j);
+            if (ni < nj)
+                heap_push(q, nj - ni, topk_qe_new(qe->node->right, ni, nj, mid+1, qe->upper));
+        }
+
+        topk_qe_free(qe);
+    }
+    heap_free(q, (void (*)(void*))topk_qe_free);
+
+    return count;
+}
