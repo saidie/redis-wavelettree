@@ -4,11 +4,12 @@ heap *heap_new(void) {
     return calloc(1, sizeof(heap));
 }
 
-void heap_free(heap *heap) {
+void heap_free(heap *heap, void (*value_free)(void*)) {
     int i;
     if (heap->nodes) {
-        for(i = 0; i < heap->len; ++i)
-            free(heap->nodes + i);
+        if (value_free)
+            for(i = 0; i < heap->len; ++i)
+                value_free(heap->nodes[i].value);
         free(heap->nodes);
     }
     free(heap);
