@@ -362,7 +362,7 @@ int WaveletTreePrevValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_range_prev_value(tree, from, to, min, max);
+    int res = wt_prev_value(tree, from, to, min, max);
 
     RedisModule_CloseKey(key);
     RedisModule_ReplyWithLongLong(ctx, res);
@@ -403,7 +403,7 @@ int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_range_next_value(tree, from, to, min, max);
+    int res = wt_next_value(tree, from, to, min, max);
 
     RedisModule_CloseKey(key);
     RedisModule_ReplyWithLongLong(ctx, res);
