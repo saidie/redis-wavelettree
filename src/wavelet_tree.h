@@ -10,6 +10,8 @@
 #define free RedisModule_Free
 #endif
 
+#include "heap.h"
+
 #define MAX_HEIGHT (32)
 #define MAX_ALPHABET 2147483647
 #define MIN_ALPHABET -2147483648
