@@ -499,6 +499,7 @@ int main(void) {
             printf("%d %s\n", score, value);
     }
     printf("heap len = %zu\n", heap_len(heap));
+    heap_free(heap, NULL);
 
     return 0;
 }
