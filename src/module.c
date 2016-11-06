@@ -525,6 +525,8 @@ int main(void) {
     printf("prev_value(15, 19, 3, 7) = %d\n", wt_prev_value(t, 15, 19, 3, 7));
     printf("next_value(15, 19, 3, 7) = %d\n", wt_next_value(t, 15, 19, 3, 7));
     printf("topk(0, 22, 5) = %d\n", wt_topk(t, 0, 22, 5, value_count_callback, NULL));
+    printf("range_mink(10, 19, 5) = %d\n", wt_range_mink(t, 10, 19, 5, value_count_callback, NULL));
+    printf("range_maxk(10, 19, 5) = %d\n", wt_range_maxk(t, 10, 19, 5, value_count_callback, NULL));
 
     wt_free(t);
 
