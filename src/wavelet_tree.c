@@ -406,7 +406,7 @@ int _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int 
             cur = cur->right;
         }
     }
-    if (cur) {
+    if (cur && i < j) {
         callback(user_data, lower, j - i);
         ++len;
     }
@@ -418,8 +418,11 @@ int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void 
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
     if (!cur) return 0;
     if (lower == upper) {
-        callback(user_data, lower, j - i);
-        return 1;
+        if (i < j) {
+            callback(user_data, lower, j - i);
+            return 1;
+        }
+        return 0;
     }
 
     return _wt_range_list_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper), callback, user_data) +
