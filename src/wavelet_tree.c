@@ -442,14 +442,8 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
             upper = mid;
             cur = cur->left;
         }
-        else if (mid < x) {
-            i = fid_rank(cur->fid, 1, i);
-            j = fid_rank(cur->fid, 1, j);
-            lower = mid + 1;
-            cur = cur->right;
-        }
         else {
-            if (cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
+            if (x <= mid && cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
                 last_left_node = cur->left;
                 last_left_lower = lower;
                 last_left_upper = mid;
@@ -472,7 +466,7 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
         cur = last_left_node;
         while (lower < upper) {
             mid = MID(lower, upper);
-            if (cur->right) {
+            if (cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
                 i = fid_rank(cur->fid, 1, i);
                 j = fid_rank(cur->fid, 1, j);
                 lower = mid + 1;
@@ -497,20 +491,14 @@ int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     int32_t mid, last_right_lower, last_right_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (cur && lower < upper) {
         mid = MID(lower, upper);
-        if (y <= mid) {
-            i = fid_rank(cur->fid, 0, i);
-            j = fid_rank(cur->fid, 0, j);
-            upper = mid;
-            cur = cur->left;
-        }
-        else if (mid < x) {
+        if (mid < x) {
             i = fid_rank(cur->fid, 1, i);
             j = fid_rank(cur->fid, 1, j);
             lower = mid + 1;
             cur = cur->right;
         }
         else {
-            if (cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
+            if (mid < y && cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
                 last_right_node = cur->right;
                 last_right_lower = mid + 1;
                 last_right_upper = upper;
@@ -533,17 +521,17 @@ int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
         cur = last_right_node;
         while (lower < upper) {
             mid = MID(lower, upper);
-            if (cur->right) {
-                i = fid_rank(cur->fid, 1, i);
-                j = fid_rank(cur->fid, 1, j);
-                lower = mid + 1;
-                cur = cur->right;
-            }
-            else {
+            if (cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
                 i = fid_rank(cur->fid, 0, i);
                 j = fid_rank(cur->fid, 0, j);
                 upper = mid;
                 cur = cur->left;
+            }
+            else {
+                i = fid_rank(cur->fid, 1, i);
+                j = fid_rank(cur->fid, 1, j);
+                lower = mid + 1;
+                cur = cur->right;
             }
         }
         if (i < j) return lower;
