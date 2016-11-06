@@ -450,6 +450,86 @@ int WaveletTreeTopK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
     return REDISMODULE_OK;
 }
 
+// wvltr.rangemink KEY FROM TO K
+int WaveletTreeRangeMinK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 5)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, k;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &k) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    RedisModule_CloseKey(key);
+
+    RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
+    int len = wt_range_mink(tree, from, to, k, _value_count_callback, ctx);
+    RedisModule_ReplySetArrayLength(ctx, len);
+
+    return REDISMODULE_OK;
+}
+
+// wvltr.rangemaxk KEY FROM TO K
+int WaveletTreeRangeMaxK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 5)
+        return RedisModule_WrongArity(ctx);
+
+    long long from, to, k;
+    if (RedisModule_StringToLongLong(argv[2], &from) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[3], &to) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_StringToLongLong(argv[4], &k) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    RedisModule_CloseKey(key);
+
+    RedisModule_ReplyWithArray(ctx, REDISMODULE_POSTPONED_ARRAY_LEN);
+    int len = wt_range_maxk(tree, from, to, k, _value_count_callback, ctx);
+    RedisModule_ReplySetArrayLength(ctx, len);
+
+    return REDISMODULE_OK;
+}
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (RedisModule_Init(ctx, "wvltr", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
@@ -495,6 +575,14 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             WaveletTreeTopK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
+    if (RedisModule_CreateCommand(ctx, "wvltr.rangemink",
+            WaveletTreeRangeMinK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
+    if (RedisModule_CreateCommand(ctx, "wvltr.rangemaxk",
+            WaveletTreeRangeMaxK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
     return REDISMODULE_OK;
 }
 
@@ -525,6 +613,8 @@ int main(void) {
     printf("prev_value(15, 19, 3, 7) = %d\n", wt_prev_value(t, 15, 19, 3, 7));
     printf("next_value(15, 19, 3, 7) = %d\n", wt_next_value(t, 15, 19, 3, 7));
     printf("topk(0, 22, 5) = %d\n", wt_topk(t, 0, 22, 5, value_count_callback, NULL));
+    printf("range_mink(10, 19, 5) = %d\n", wt_range_mink(t, 10, 19, 5, value_count_callback, NULL));
+    printf("range_maxk(10, 19, 5) = %d\n", wt_range_maxk(t, 10, 19, 5, value_count_callback, NULL));
 
     wt_free(t);
 

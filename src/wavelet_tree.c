@@ -605,3 +605,51 @@ int wt_topk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, in
 
     return count;
 }
+
+#define WT_RANGE_SORT_MIN 0
+#define WT_RANGE_SORT_MAX 1
+
+int _wt_range_sort(const wt_node *node, int i, int j, int k, int32_t lower, int32_t upper, int flags,
+    void (*callback)(void*, int32_t, int), void *user_data) {
+    if (lower == upper) {
+        callback(user_data, lower, j - i);
+        return k - 1;
+    }
+
+    int li, lj, ri, rj;
+    int32_t mid;
+    li = fid_rank(node->fid, 0, i);
+    lj = fid_rank(node->fid, 0, j);
+    ri = fid_rank(node->fid, 1, i);
+    rj = fid_rank(node->fid, 1, j);
+    mid = MID(lower, upper);
+
+    if (flags == WT_RANGE_SORT_MIN) {
+        if (li < lj)
+            k = _wt_range_sort(node->left, li, lj, k, lower, mid, flags, callback, user_data);
+    }
+    else {
+        if (ri < rj)
+            k = _wt_range_sort(node->right, ri, rj, k, mid+1, upper, flags, callback, user_data);
+    }
+
+    if(k == 0) return k;
+
+    if (flags == WT_RANGE_SORT_MIN) {
+        if (ri < rj)
+            k = _wt_range_sort(node->right, ri, rj, k, mid+1, upper, flags, callback, user_data);
+    }
+    else {
+        if (li < lj)
+            k = _wt_range_sort(node->left, li, lj, k, lower, mid, flags, callback, user_data);
+    }
+    return k;
+}
+
+int wt_range_mink(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+    return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MIN, callback, user_data);
+}
+
+int wt_range_maxk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+    return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MAX, callback, user_data);
+}
