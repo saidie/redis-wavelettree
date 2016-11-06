@@ -128,6 +128,38 @@ int WaveletTreeBuildFromList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString
     return REDISMODULE_OK;
 }
 
+// wvltr.access KEY INDEX
+int WaveletTreeAccess_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 3)
+        return RedisModule_WrongArity(ctx);
+
+    long long index;
+    if (RedisModule_StringToLongLong(argv[2], &index) != REDISMODULE_OK) {
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    if (type == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_CloseKey(key);
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return REDISMODULE_OK;
+    }
+
+    wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
+    int res = wt_access(tree, index);
+
+    RedisModule_CloseKey(key);
+    RedisModule_ReplyWithLongLong(ctx, res);
+    return REDISMODULE_OK;
+}
+
 // wvltr.rank KEY VALUE INDEX
 int WaveletTreeRank_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc != 4)
