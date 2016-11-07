@@ -2,6 +2,8 @@
 
 A Redis module implementing the Wavelet Tree data structure.
 
+<a title="By Giuseppe Ottaviano (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0)], via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File%3AWavelet_tree.png"><img width="256" alt="Wavelet tree" src="https://upload.wikimedia.org/wikipedia/commons/0/01/Wavelet_tree.png"/></a>
+
 The Wavelet Tree is a versatile data structure which provides some primitive operations over a sequence with less time and memory complexity and many useful applications has been found on top of it.
 See [Wavelet Tree - Wikipedia](https://en.wikipedia.org/wiki/Wavelet_Tree) for more detail and for further reference.
 
