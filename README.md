@@ -7,6 +7,10 @@ A Redis module implementing the Wavelet Tree data structure.
 The Wavelet Tree is a versatile data structure which provides some primitive operations over a sequence with less time and memory complexity and many useful applications has been found on top of it.
 See [Wavelet Tree - Wikipedia](https://en.wikipedia.org/wiki/Wavelet_Tree) for more detail and for further reference.
 
+## Notice
+
+This module is under development. Module interfaces, internal implementations and complexity could be changed in near future.
+
 ## Installation
 
 To build the module run
@@ -43,3 +47,6 @@ Then load the built module `build/libwvltr.so` to Redis server.
 
 ### `wvltr.rangemaxk`
 
+## License
+
+Please see [LICENSE](https://github.com/saidie/redis-wavelettree/blob/master/LICENSE).
