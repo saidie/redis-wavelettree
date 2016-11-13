@@ -30,7 +30,11 @@ Then load the built module `build/libwvltr.so` to Redis server.
 
 Builds a wavelet tree from the list given by the specified `key` and stores it in `destination`.
 
-### `wvltr.access`
+### `wvltr.access key index`
+
+- Time complexity: O(log A)
+
+Returns the element at index `index` in the wavelet tree stored at `key`.
 
 ### `wvltr.rank`
 
