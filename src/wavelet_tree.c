@@ -39,6 +39,7 @@ void fid_free(fid *fid) {
 }
 
 static inline int fid_rank(fid *fid, int b, size_t i) {
+    if (fid->n < i) i = fid->n;
     int res = fid->rs[FID_I2SBI(fid, i)] + fid->rb[FID_I2BI(fid, i)] + __builtin_popcount(FID_CHOP_BLOCK_I(fid, fid->bs[FID_I2BI(fid, i)], i));
     return b ? res : i - res;
 }
