@@ -636,9 +636,11 @@ int main(void) {
     wt_tree *t = wt_new();
     wt_build(t, array, 22);
 
-    int i;
-    for(i = 0; i < 22; ++i)
-        printf("%d ", wt_access(t, i));
+    int i, res;
+    for(i = 0; i < 22; ++i) {
+        if (wt_access(t, i, &res))
+            printf("%d ", res);
+    }
     printf("\n");
 
     printf("rank_3(S, 14) = %d\n", wt_rank(t, 3, 14));
