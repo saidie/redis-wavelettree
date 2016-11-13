@@ -23,7 +23,12 @@ Then load the built module `build/libwvltr.so` to Redis server.
 
 ## Available commands
 
-### `wvltr.lbuild`
+### `wvltr.lbuild destination key`
+
+- Time complexity: O(N log A)
+- Space complexity: O(N log A)
+
+Builds a wavelet tree from the list given by the specified key and stores it in destination.
 
 ### `wvltr.access`
 
