@@ -36,7 +36,11 @@ Builds a wavelet tree from the list given by the specified `key` and stores it i
 
 Returns the element at index `index` in the wavelet tree stored at `key`.
 
-### `wvltr.rank`
+### `wvltr.rank key value index`
+
+- Time complexity: O(log A)
+
+Returns the number of occurrences of `value` in elements of the wavelet tree stored at `key` before the index `index`.
 
 ### `wvltr.select`
 
