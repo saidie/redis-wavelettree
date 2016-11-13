@@ -36,20 +36,24 @@ void *WaveletTreeType_Load(RedisModuleIO *rdb, int encver) {
 void WaveletTreeType_Save(RedisModuleIO *rdb, void *value) {
     wt_tree *tree = value;
     uint32_t i;
+    int32_t res;
 
     RedisModule_SaveUnsigned(rdb, tree->len);
-    for(i = 0; i < tree->len; ++i)
-        RedisModule_SaveSigned(rdb, wt_access(tree, i));
+    for(i = 0; i < tree->len; ++i) {
+        assert(wt_access(tree, i, &res));
+        RedisModule_SaveSigned(rdb, res);
+    }
 }
 
 void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *value) {
     wt_tree *tree = value;
-    uint32_t i, v;
+    uint32_t i;
+    int32_t v;
     char *buffer, *bhead;
 
     bhead = buffer = RedisModule_Calloc((tree->len << 2) + 1, sizeof(char));
     for(i = 0; i < tree->len; ++i) {
-        v = wt_access(tree, i);
+        assert(wt_access(tree, i, &v));
         *(bhead++) = (v >>= 24) & 0xFF;
         *(bhead++) = (v >>= 16) & 0xFF;
         *(bhead++) = (v >>= 8) & 0xFF;
@@ -153,10 +157,13 @@ int WaveletTreeAccess_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_access(tree, index);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res;
+    if (wt_access(tree, index, &res))
+        RedisModule_ReplyWithLongLong(ctx, res);
+    else
+        RedisModule_ReplyWithNull(ctx);
     return REDISMODULE_OK;
 }
 
