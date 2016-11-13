@@ -227,10 +227,10 @@ void wt_free(wt_tree *tree) {
     free(tree);
 }
 
-int32_t wt_access(const wt_tree *tree, int i) {
+int wt_access(const wt_tree *tree, size_t i, int32_t *res) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
-    while (lower < upper) {
+    while (cur && lower < upper) {
         int32_t mid = MID(lower, upper);
         if (fid_rank(cur->fid, 0, i+1) - fid_rank(cur->fid, 0, i)) {
             i = fid_rank(cur->fid, 0, i);
@@ -243,7 +243,8 @@ int32_t wt_access(const wt_tree *tree, int i) {
             cur = cur->right;
         }
     }
-    return lower;
+    *res = lower;
+    return cur && lower == upper;
 }
 
 int wt_rank(const wt_tree *tree, int32_t value, int i) {
