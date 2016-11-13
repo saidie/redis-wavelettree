@@ -42,7 +42,11 @@ Returns the element at index `index` in the wavelet tree stored at `key`.
 
 Returns the number of occurrences of `value` in elements of the wavelet tree stored at `key` before the index `index`.
 
-### `wvltr.select`
+### `wvltr.select key value count`
+
+- Time complexity: O(log^2 A)
+
+Return the index of `value` at the `count`-th element of the wavelet tree stored at `key`.
 
 ### `wvltr.quantile`
 
