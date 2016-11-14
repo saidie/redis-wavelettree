@@ -654,7 +654,8 @@ int main(void) {
     printf("\n");
 
     printf("rank_3(S, 14) = %d\n", wt_rank(t, 3, 14));
-    printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t, 6, 6, 16));
+    if(wt_quantile(t, 6, 16, 6, &res))
+        printf("quantile_6(S, 6, 16) = %d\n", res);
     printf("select(S, 3, 4) = %d\n", wt_select(t, 3, 4));
     printf("range_freq(S, 0, 8, 3, 6) = %d\n", wt_range_freq(t, 0, 8, 3, 6));
     printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, value_count_callback, NULL));
