@@ -270,7 +270,7 @@ int wt_rank(const wt_tree *tree, int32_t value, int i) {
 }
 
 
-int wt_select(const wt_tree *tree, int32_t v, int i) {
+int wt_select(const wt_tree *tree, int32_t v, size_t i) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
