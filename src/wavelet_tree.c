@@ -300,10 +300,13 @@ int wt_select(const wt_tree *tree, int32_t v, size_t i) {
     return i;
 }
 
-int wt_quantile(const wt_tree *tree, int k, int i, int j) {
+int wt_quantile(const wt_tree *tree, size_t i, size_t j, size_t k, int32_t *res) {
+    if (j <= i || i - j < k)
+        return 0;
+
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
-    while (lower < upper) {
+    while (cur && lower < upper) {
         int32_t mid = MID(lower, upper);
 
         int ln = fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
@@ -321,7 +324,8 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
             cur = cur->right;
         }
     }
-    return lower;
+    *res = lower;
+    return cur && lower == upper && k <= i - j;
 }
 
 #define RANGE_FLAG_LEFT  0x1
