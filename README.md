@@ -52,7 +52,7 @@ Return the index of `value` at the `count`-th element of the wavelet tree stored
 
 - Time complexity: O(log A)
 
-Return the `count`-th smallest element in the elements within the given index range [`from`, `to`).
+Return the `count`-th smallest element in the elements of the wavlet tree stored at `key` within the given index range [`from`, `to`).
 
 ### `wvltr.rangefreq`
 
