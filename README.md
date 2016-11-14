@@ -48,7 +48,11 @@ Returns the number of occurrences of `value` in elements of the wavelet tree sto
 
 Return the index of `value` at the `count`-th element of the wavelet tree stored at `key`.
 
-### `wvltr.quantile`
+### `wvltr.quantile key from to count`
+
+- Time complexity: O(log A)
+
+Return the `count`-th smallest element in the elements within the given index range [`from`, `to`).
 
 ### `wvltr.rangefreq`
 
