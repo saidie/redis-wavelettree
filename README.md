@@ -58,7 +58,7 @@ Return the `count`-th smallest element in the elements of the wavlet tree stored
 
 - Time complexity: O(log A)
 
-Count the number of elements ranging from `min` to `min` within the given index range [`from`, `to`) of the wavelet tree stored at `key`
+Count the number of elements ranging from `min` to `min` within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
 ### `wvltr.rangelist key from to min max`
 
