@@ -54,7 +54,11 @@ Return the index of `value` at the `count`-th element of the wavelet tree stored
 
 Return the `count`-th smallest element in the elements of the wavlet tree stored at `key` within the given index range [`from`, `to`).
 
-### `wvltr.rangefreq`
+### `wvltr.rangefreq key from to min max`
+
+- Time complexity: O(log A)
+
+Count the number of elements ranging from `min` to `min` within the given index range [`from`, `to`) of the wavelet tree stored at `key`
 
 ### `wvltr.rangelist`
 
