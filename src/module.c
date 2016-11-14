@@ -271,10 +271,14 @@ int WaveletTreeQuantile_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **ar
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_quantile(tree, count, from, to);
+        RedisModule_CloseKey(key);
 
-    RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+    int32_t res;
+    if (wt_quantile(tree, from, to, count, &res))
+        RedisModule_ReplyWithLongLong(ctx, res);
+    else
+        RedisModule_ReplyWithNull(ctx);
+
     return REDISMODULE_OK;
 }
 
