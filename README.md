@@ -40,7 +40,7 @@ Returns the element at index `index` in the wavelet tree stored at `key`.
 
 - Time complexity: O(log A)
 
-Returns the number of occurrences of `value` in elements of the wavelet tree stored at `key` before the index `index`.
+Returns the number of occurrences of `value` in elements before the index `index` of the wavelet tree stored at `key`.
 
 ### `wvltr.select key value count`
 
@@ -52,7 +52,7 @@ Return the index of `value` at the `count`-th element of the wavelet tree stored
 
 - Time complexity: O(log A)
 
-Return the `count`-th smallest element in the elements of the wavlet tree stored at `key` within the given index range [`from`, `to`).
+Return the `count`-th smallest element in the elements within the given index range [`from`, `to`) of the wavlet tree stored at `key`.
 
 ### `wvltr.rangefreq key from to min max`
 
