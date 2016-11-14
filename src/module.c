@@ -230,10 +230,13 @@ int WaveletTreeSelect_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_select(tree, value, count);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int res = wt_select(tree, value, count);
+    if (res == -1)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
     return REDISMODULE_OK;
 }
 
