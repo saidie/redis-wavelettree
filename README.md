@@ -23,6 +23,10 @@ Then load the built module `build/libwvltr.so` to Redis server.
 
 ## Available commands
 
+Available commands are described below with time and space complexities where `N` is the number of elements in a sequence represented by a wavelet tree and `A` is the number of distinct elements in a sequence.
+
+NOTICE: In current implementation, `A` is fixed to `2^32`.
+
 ### `wvltr.lbuild destination key`
 
 - Time complexity: O(N log A)
