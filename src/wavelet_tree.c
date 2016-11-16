@@ -392,7 +392,7 @@ int wt_range_freq(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y)
         _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper);
 }
 
-int _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper,
+int _wt_range_list_half(const wt_node *cur, size_t i, size_t j, int32_t boundary, int flags, int32_t lower, int32_t upper,
     void (*callback)(void*, int32_t, int), void *user_data) {
     int32_t mid, len = 0;
     while (cur && lower < upper) {
@@ -421,10 +421,12 @@ int _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int 
     return len;
 }
 
-int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_list(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data) {
+    if (y <= x) return 0;
+
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
-    if (!cur) return 0;
+    if (!cur || j <= i) return 0;
     if (lower == upper) {
         if (i < j) {
             callback(user_data, lower, j - i);
