@@ -86,9 +86,17 @@ Return the minimum element `x` which satisfies `min < x <= max` within the given
 
 List most frequent `k` elements within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
-### `wvltr.rangemink`
+### `wvltr.rangemink key from to k`
 
-### `wvltr.rangemaxk`
+- Time complexity: O(k log A)
+
+List `k` elements in ascending order with frequency within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
+
+### `wvltr.rangemaxk key from to k`
+
+- Time complexity: O(k log A)
+
+List `k` elements in descending order with frequency within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
 ## License
 
