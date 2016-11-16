@@ -332,7 +332,7 @@ int wt_quantile(const wt_tree *tree, size_t i, size_t j, size_t k, int32_t *res)
 #define RANGE_FLAG_RIGHT 0x2
 #define RANGE_FLAG_BOTH (RANGE_FLAG_LEFT|RANGE_FLAG_RIGHT)
 
-static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
+static inline const wt_node *_wt_range_branch(wt_node *cur, size_t *i, size_t *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
     int32_t mid;
     while (cur && *lower < *upper) {
         mid = MID(*lower, *upper);
@@ -354,7 +354,7 @@ static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int3
     return cur;
 }
 
-int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper) {
+int _wt_range_freq_half(const wt_node *cur, size_t i, size_t j, int32_t boundary, int flags, int32_t lower, int32_t upper) {
     int freq = 0;
     int32_t mid;
     while (cur && lower < upper) {
@@ -380,10 +380,12 @@ int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int 
     return freq;
 }
 
-int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int wt_range_freq(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
+    if (y <= x) return 0;
+
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
-    if (!cur) return 0;
+    if (!cur || j <= i) return 0;
     if (lower == upper) return j - i;
 
     return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper)) +

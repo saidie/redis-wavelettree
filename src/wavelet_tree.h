@@ -68,7 +68,7 @@ int wt_access(const wt_tree *cur, size_t i, int32_t *res);
 int wt_rank(const wt_tree *cur, int32_t value, int i);
 int wt_select(const wt_tree *cur, int32_t v, size_t i);
 int wt_quantile(const wt_tree *cur, size_t k, size_t i, size_t j, int32_t *res);
-int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
+int wt_range_freq(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y);
 int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data);
 int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
 int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y);
