@@ -66,9 +66,17 @@ Count the number of elements ranging from `min` to `min` within the given index 
 
 List the elements with frequency ranging from `min` to `min` within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
-### `wvltr.prevvalue`
+### `wvltr.prevvalue key from to min max`
 
-### `wvltr.nextvalue`
+- Time complexity: O(log A)
+
+Return the maximum element `x` which satisfies `min <= x < max` within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
+
+### `wvltr.nextvalue key from to min max`
+
+- Time complexity: O(log A)
+
+Return the minimum element `x` which satisfies `min < x <= max` within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
 ### `wvltr.topk`
 
