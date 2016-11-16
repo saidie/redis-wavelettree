@@ -78,7 +78,13 @@ Return the maximum element `x` which satisfies `min <= x < max` within the given
 
 Return the minimum element `x` which satisfies `min < x <= max` within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
-### `wvltr.topk`
+### `wvltr.topk key from to k`
+
+- Time complexity
+  - O(min(to-from, A) log A) in worst case
+  - O(k log A) when there is large frequency deviation
+
+List most frequent `k` elements within the given index range [`from`, `to`) of the wavelet tree stored at `key`.
 
 ### `wvltr.rangemink`
 
