@@ -152,7 +152,7 @@ int WaveletTreeAccess_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
@@ -225,7 +225,7 @@ int WaveletTreeSelect_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
@@ -266,7 +266,7 @@ int WaveletTreeQuantile_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **ar
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
@@ -360,7 +360,7 @@ int WaveletTreeRangeList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -403,7 +403,7 @@ int WaveletTreePrevValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
@@ -448,7 +448,7 @@ int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
@@ -490,7 +490,7 @@ int WaveletTreeTopK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -530,7 +530,7 @@ int WaveletTreeRangeMinK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -570,7 +570,7 @@ int WaveletTreeRangeMaxK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
