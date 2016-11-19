@@ -36,20 +36,24 @@ void *WaveletTreeType_Load(RedisModuleIO *rdb, int encver) {
 void WaveletTreeType_Save(RedisModuleIO *rdb, void *value) {
     wt_tree *tree = value;
     uint32_t i;
+    int32_t res;
 
     RedisModule_SaveUnsigned(rdb, tree->len);
-    for(i = 0; i < tree->len; ++i)
-        RedisModule_SaveSigned(rdb, wt_access(tree, i));
+    for(i = 0; i < tree->len; ++i) {
+        assert(wt_access(tree, i, &res));
+        RedisModule_SaveSigned(rdb, res);
+    }
 }
 
 void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *value) {
     wt_tree *tree = value;
-    uint32_t i, v;
+    uint32_t i;
+    int32_t v;
     char *buffer, *bhead;
 
     bhead = buffer = RedisModule_Calloc((tree->len << 2) + 1, sizeof(char));
     for(i = 0; i < tree->len; ++i) {
-        v = wt_access(tree, i);
+        assert(wt_access(tree, i, &v));
         *(bhead++) = (v >>= 24) & 0xFF;
         *(bhead++) = (v >>= 16) & 0xFF;
         *(bhead++) = (v >>= 8) & 0xFF;
@@ -148,15 +152,18 @@ int WaveletTreeAccess_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_access(tree, index);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res;
+    if (wt_access(tree, index, &res))
+        RedisModule_ReplyWithLongLong(ctx, res);
+    else
+        RedisModule_ReplyWithNull(ctx);
     return REDISMODULE_OK;
 }
 
@@ -218,15 +225,18 @@ int WaveletTreeSelect_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_select(tree, value, count);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int res = wt_select(tree, value, count);
+    if (res == -1)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
     return REDISMODULE_OK;
 }
 
@@ -256,15 +266,19 @@ int WaveletTreeQuantile_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **ar
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_quantile(tree, count, from, to);
+        RedisModule_CloseKey(key);
 
-    RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+    int32_t res;
+    if (wt_quantile(tree, from, to, count, &res))
+        RedisModule_ReplyWithLongLong(ctx, res);
+    else
+        RedisModule_ReplyWithNull(ctx);
+
     return REDISMODULE_OK;
 }
 
@@ -346,7 +360,7 @@ int WaveletTreeRangeList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -389,15 +403,19 @@ int WaveletTreePrevValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_prev_value(tree, from, to, min, max);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res = wt_prev_value(tree, from, to, min, max);
+    if (res == max)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
+
     return REDISMODULE_OK;
 }
 
@@ -430,15 +448,19 @@ int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithNull(ctx);
         return REDISMODULE_OK;
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_next_value(tree, from, to, min, max);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res = wt_next_value(tree, from, to, min, max);
+    if (res == max)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
+
     return REDISMODULE_OK;
 }
 
@@ -468,7 +490,7 @@ int WaveletTreeTopK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -508,7 +530,7 @@ int WaveletTreeRangeMinK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -548,7 +570,7 @@ int WaveletTreeRangeMaxK_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
 
     if (type == REDISMODULE_KEYTYPE_EMPTY) {
         RedisModule_CloseKey(key);
-        RedisModule_ReplyWithLongLong(ctx, 0);
+        RedisModule_ReplyWithArray(ctx, 0);
         return REDISMODULE_OK;
     }
 
@@ -636,13 +658,16 @@ int main(void) {
     wt_tree *t = wt_new();
     wt_build(t, array, 22);
 
-    int i;
-    for(i = 0; i < 22; ++i)
-        printf("%d ", wt_access(t, i));
+    int i, res;
+    for(i = 0; i < 22; ++i) {
+        if (wt_access(t, i, &res))
+            printf("%d ", res);
+    }
     printf("\n");
 
     printf("rank_3(S, 14) = %d\n", wt_rank(t, 3, 14));
-    printf("quantile_6(S, 6, 16) = %d\n", wt_quantile(t, 6, 6, 16));
+    if(wt_quantile(t, 6, 16, 6, &res))
+        printf("quantile_6(S, 6, 16) = %d\n", res);
     printf("select(S, 3, 4) = %d\n", wt_select(t, 3, 4));
     printf("range_freq(S, 0, 8, 3, 6) = %d\n", wt_range_freq(t, 0, 8, 3, 6));
     printf("range_list(5, 17, 2, 6) = %d\n", wt_range_list(t, 5, 17, 2, 6, value_count_callback, NULL));

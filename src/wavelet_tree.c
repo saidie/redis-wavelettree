@@ -39,6 +39,7 @@ void fid_free(fid *fid) {
 }
 
 static inline int fid_rank(fid *fid, int b, size_t i) {
+    if (fid->n < i) i = fid->n;
     int res = fid->rs[FID_I2SBI(fid, i)] + fid->rb[FID_I2BI(fid, i)] + __builtin_popcount(FID_CHOP_BLOCK_I(fid, fid->bs[FID_I2BI(fid, i)], i));
     return b ? res : i - res;
 }
@@ -226,10 +227,10 @@ void wt_free(wt_tree *tree) {
     free(tree);
 }
 
-int32_t wt_access(const wt_tree *tree, int i) {
+int wt_access(const wt_tree *tree, size_t i, int32_t *res) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
-    while (lower < upper) {
+    while (cur && lower < upper) {
         int32_t mid = MID(lower, upper);
         if (fid_rank(cur->fid, 0, i+1) - fid_rank(cur->fid, 0, i)) {
             i = fid_rank(cur->fid, 0, i);
@@ -242,7 +243,8 @@ int32_t wt_access(const wt_tree *tree, int i) {
             cur = cur->right;
         }
     }
-    return lower;
+    *res = lower;
+    return cur && lower == upper;
 }
 
 int wt_rank(const wt_tree *tree, int32_t value, int i) {
@@ -268,7 +270,7 @@ int wt_rank(const wt_tree *tree, int32_t value, int i) {
 }
 
 
-int wt_select(const wt_tree *tree, int32_t v, int i) {
+int wt_select(const wt_tree *tree, int32_t v, size_t i) {
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (lower < upper) {
@@ -298,10 +300,13 @@ int wt_select(const wt_tree *tree, int32_t v, int i) {
     return i;
 }
 
-int wt_quantile(const wt_tree *tree, int k, int i, int j) {
+int wt_quantile(const wt_tree *tree, size_t i, size_t j, size_t k, int32_t *res) {
+    if (j <= i || i - j < k)
+        return 0;
+
     wt_node *cur = tree->root;
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
-    while (lower < upper) {
+    while (cur && lower < upper) {
         int32_t mid = MID(lower, upper);
 
         int ln = fid_rank(cur->fid, 0, j) - fid_rank(cur->fid, 0, i);
@@ -319,14 +324,15 @@ int wt_quantile(const wt_tree *tree, int k, int i, int j) {
             cur = cur->right;
         }
     }
-    return lower;
+    *res = lower;
+    return cur && lower == upper && k <= i - j;
 }
 
 #define RANGE_FLAG_LEFT  0x1
 #define RANGE_FLAG_RIGHT 0x2
 #define RANGE_FLAG_BOTH (RANGE_FLAG_LEFT|RANGE_FLAG_RIGHT)
 
-static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
+static inline const wt_node *_wt_range_branch(wt_node *cur, size_t *i, size_t *j, int32_t x, int32_t y, int32_t *lower, int32_t *upper) {
     int32_t mid;
     while (cur && *lower < *upper) {
         mid = MID(*lower, *upper);
@@ -348,7 +354,7 @@ static inline const wt_node *_wt_range_branch(wt_node *cur, int *i, int *j, int3
     return cur;
 }
 
-int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper) {
+int _wt_range_freq_half(const wt_node *cur, size_t i, size_t j, int32_t boundary, int flags, int32_t lower, int32_t upper) {
     int freq = 0;
     int32_t mid;
     while (cur && lower < upper) {
@@ -374,17 +380,19 @@ int _wt_range_freq_half(const wt_node *cur, int i, int j, int32_t boundary, int 
     return freq;
 }
 
-int wt_range_freq(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int wt_range_freq(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
+    if (y <= x) return 0;
+
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
-    if (!cur) return 0;
+    if (!cur || j <= i) return 0;
     if (lower == upper) return j - i;
 
     return _wt_range_freq_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper)) +
         _wt_range_freq_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper);
 }
 
-int _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int flags, int32_t lower, int32_t upper,
+int _wt_range_list_half(const wt_node *cur, size_t i, size_t j, int32_t boundary, int flags, int32_t lower, int32_t upper,
     void (*callback)(void*, int32_t, int), void *user_data) {
     int32_t mid, len = 0;
     while (cur && lower < upper) {
@@ -406,27 +414,32 @@ int _wt_range_list_half(const wt_node *cur, int i, int j, int32_t boundary, int 
             cur = cur->right;
         }
     }
-    if (cur) {
+    if (cur && i < j) {
         callback(user_data, lower, j - i);
         ++len;
     }
     return len;
 }
 
-int wt_range_list(const wt_tree *tree, int i, int j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_list(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y, void (*callback)(void*, int32_t, int), void *user_data) {
+    if (y <= x) return 0;
+
     int32_t lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     const wt_node *cur = _wt_range_branch(tree->root, &i, &j, x, y, &lower, &upper);
-    if (!cur) return 0;
+    if (!cur || j <= i) return 0;
     if (lower == upper) {
-        callback(user_data, lower, j - i);
-        return 1;
+        if (i < j) {
+            callback(user_data, lower, j - i);
+            return 1;
+        }
+        return 0;
     }
 
     return _wt_range_list_half(cur->left, fid_rank(cur->fid, 0, i), fid_rank(cur->fid, 0, j), x, RANGE_FLAG_RIGHT, lower, MID(lower, upper), callback, user_data) +
         _wt_range_list_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper, callback, user_data);
 }
 
-int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int32_t wt_prev_value(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
     y -= 1;
     const wt_node *cur = tree->root, *last_left_node = NULL;
     int last_left_i, last_left_j;
@@ -439,14 +452,8 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
             upper = mid;
             cur = cur->left;
         }
-        else if (mid < x) {
-            i = fid_rank(cur->fid, 1, i);
-            j = fid_rank(cur->fid, 1, j);
-            lower = mid + 1;
-            cur = cur->right;
-        }
         else {
-            if (cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
+            if (x <= mid && cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
                 last_left_node = cur->left;
                 last_left_lower = lower;
                 last_left_upper = mid;
@@ -469,7 +476,7 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
         cur = last_left_node;
         while (lower < upper) {
             mid = MID(lower, upper);
-            if (cur->right) {
+            if (cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
                 i = fid_rank(cur->fid, 1, i);
                 j = fid_rank(cur->fid, 1, j);
                 lower = mid + 1;
@@ -487,27 +494,21 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     return y + 1;
 }
 
-int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int32_t wt_next_value(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
     x += 1;
     const wt_node *cur = tree->root, *last_right_node = NULL;
     int last_right_i, last_right_j;
     int32_t mid, last_right_lower, last_right_upper, lower = MIN_ALPHABET, upper = MAX_ALPHABET;
     while (cur && lower < upper) {
         mid = MID(lower, upper);
-        if (y <= mid) {
-            i = fid_rank(cur->fid, 0, i);
-            j = fid_rank(cur->fid, 0, j);
-            upper = mid;
-            cur = cur->left;
-        }
-        else if (mid < x) {
+        if (mid < x) {
             i = fid_rank(cur->fid, 1, i);
             j = fid_rank(cur->fid, 1, j);
             lower = mid + 1;
             cur = cur->right;
         }
         else {
-            if (cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
+            if (mid < y && cur->right && fid_rank(cur->fid, 1, i) < fid_rank(cur->fid, 1, j)) {
                 last_right_node = cur->right;
                 last_right_lower = mid + 1;
                 last_right_upper = upper;
@@ -530,17 +531,17 @@ int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
         cur = last_right_node;
         while (lower < upper) {
             mid = MID(lower, upper);
-            if (cur->right) {
-                i = fid_rank(cur->fid, 1, i);
-                j = fid_rank(cur->fid, 1, j);
-                lower = mid + 1;
-                cur = cur->right;
-            }
-            else {
+            if (cur->left && fid_rank(cur->fid, 0, i) < fid_rank(cur->fid, 0, j)) {
                 i = fid_rank(cur->fid, 0, i);
                 j = fid_rank(cur->fid, 0, j);
                 upper = mid;
                 cur = cur->left;
+            }
+            else {
+                i = fid_rank(cur->fid, 1, i);
+                j = fid_rank(cur->fid, 1, j);
+                lower = mid + 1;
+                cur = cur->right;
             }
         }
         if (i < j) return lower;
@@ -569,7 +570,7 @@ void topk_qe_free(topk_qe *qe) {
     free(qe);
 }
 
-int wt_topk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_topk(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     heap *q = heap_new();
     heap_push(q, j - i, topk_qe_new(tree->root, i, j, MIN_ALPHABET, MAX_ALPHABET));
 
@@ -646,10 +647,10 @@ int _wt_range_sort(const wt_node *node, int i, int j, int k, int32_t lower, int3
     return k;
 }
 
-int wt_range_mink(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_mink(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MIN, callback, user_data);
 }
 
-int wt_range_maxk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_maxk(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MAX, callback, user_data);
 }
