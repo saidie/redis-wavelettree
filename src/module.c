@@ -54,12 +54,12 @@ void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *v
     bhead = buffer = RedisModule_Calloc((tree->len << 2) + 1, sizeof(char));
     for(i = 0; i < tree->len; ++i) {
         assert(wt_access(tree, i, &v));
-        *(bhead++) = (v >>= 24) & 0xFF;
-        *(bhead++) = (v >>= 16) & 0xFF;
-        *(bhead++) = (v >>= 8) & 0xFF;
+        *(bhead++) = (v >> 24) & 0xFF;
+        *(bhead++) = (v >> 16) & 0xFF;
+        *(bhead++) = (v >> 8) & 0xFF;
         *(bhead++) = v & 0xFF;
     }
-    RedisModule_EmitAOF(aof, "wvltr.build", "sc", key, buffer);
+    RedisModule_EmitAOF(aof, "wvltr.set", "sb", key, buffer, tree->len<<2);
     RedisModule_Free(buffer);
 }
 
@@ -129,7 +129,50 @@ int WaveletTreeBuildFromList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString
     RedisModule_FreeCallReply(reply);
     RedisModule_CloseKey(key);
 
+    RedisModule_ReplicateVerbatim(ctx);
+
     return REDISMODULE_OK;
+}
+
+// wvltr.set KEY BYTES
+int WaveletTreeSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 3)
+        return RedisModule_WrongArity(ctx);
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    int i, j;
+    size_t len;
+    const char *buf = RedisModule_StringPtrLen(argv[2], &len);
+
+    int32_t *data = RedisModule_Calloc(len>>2, sizeof(int32_t));
+    for (i = 0; i < (len>>2); ++i) {
+        for (j = 0; j < 4; ++j) {
+            data[i] <<= 8;
+            data[i] += buf[(i<<2)+j];
+        }
+    }
+
+    wt_tree *tree = wt_new();
+    wt_build(tree, data, len>>2);
+
+    RedisModule_ModuleTypeSetValue(key, WaveletTreeType, tree);
+
+    int ret = RedisModule_ReplyWithSimpleString(ctx, "OK");
+
+    RedisModule_Free(data);
+    RedisModule_CloseKey(key);
+
+    if (ret == REDISMODULE_OK)
+        RedisModule_ReplicateVerbatim(ctx);
+
+    return ret;
 }
 
 // wvltr.access KEY INDEX
@@ -597,48 +640,52 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             WaveletTreeBuildFromList_RedisCommand, "write deny-oom", 1, 2, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
+    if (RedisModule_CreateCommand(ctx, "wvltr.set",
+            WaveletTreeSet_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+        return REDISMODULE_ERR;
+
     if (RedisModule_CreateCommand(ctx, "wvltr.access",
-            WaveletTreeAccess_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeAccess_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rank",
-            WaveletTreeRank_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRank_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.select",
-            WaveletTreeSelect_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeSelect_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.quantile",
-            WaveletTreeQuantile_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeQuantile_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangefreq",
-            WaveletTreeRangeFreq_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeFreq_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangelist",
-            WaveletTreeRangeList_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeList_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.prevvalue",
-            WaveletTreePrevValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreePrevValue_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.nextvalue",
-            WaveletTreeNextValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeNextValue_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.topk",
-            WaveletTreeTopK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeTopK_RedisCommand, "readonly deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangemink",
-            WaveletTreeRangeMinK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeMinK_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangemaxk",
-            WaveletTreeRangeMaxK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeMaxK_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     return REDISMODULE_OK;
