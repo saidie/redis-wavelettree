@@ -570,7 +570,7 @@ void topk_qe_free(topk_qe *qe) {
     free(qe);
 }
 
-int wt_topk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_topk(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     heap *q = heap_new();
     heap_push(q, j - i, topk_qe_new(tree->root, i, j, MIN_ALPHABET, MAX_ALPHABET));
 
