@@ -647,10 +647,10 @@ int _wt_range_sort(const wt_node *node, int i, int j, int k, int32_t lower, int3
     return k;
 }
 
-int wt_range_mink(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_mink(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MIN, callback, user_data);
 }
 
-int wt_range_maxk(const wt_tree *tree, int i, int j, int k, void (*callback)(void*, int32_t, int), void *user_data) {
+int wt_range_maxk(const wt_tree *tree, size_t i, size_t j, size_t k, void (*callback)(void*, int32_t, int), void *user_data) {
     return k - _wt_range_sort(tree->root, i, j, k, MIN_ALPHABET, MAX_ALPHABET, WT_RANGE_SORT_MAX, callback, user_data);
 }
