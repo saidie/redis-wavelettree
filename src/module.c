@@ -129,6 +129,8 @@ int WaveletTreeBuildFromList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString
     RedisModule_FreeCallReply(reply);
     RedisModule_CloseKey(key);
 
+    RedisModule_ReplicateVerbatim(ctx);
+
     return REDISMODULE_OK;
 }
 
