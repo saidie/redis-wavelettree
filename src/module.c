@@ -645,47 +645,47 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.access",
-            WaveletTreeAccess_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeAccess_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rank",
-            WaveletTreeRank_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRank_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.select",
-            WaveletTreeSelect_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeSelect_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.quantile",
-            WaveletTreeQuantile_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeQuantile_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangefreq",
-            WaveletTreeRangeFreq_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeFreq_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangelist",
-            WaveletTreeRangeList_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeList_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.prevvalue",
-            WaveletTreePrevValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreePrevValue_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.nextvalue",
-            WaveletTreeNextValue_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeNextValue_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.topk",
-            WaveletTreeTopK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeTopK_RedisCommand, "readonly deny-oom", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangemink",
-            WaveletTreeRangeMinK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeMinK_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     if (RedisModule_CreateCommand(ctx, "wvltr.rangemaxk",
-            WaveletTreeRangeMaxK_RedisCommand, "write deny-oom", 1, 1, 1) == REDISMODULE_ERR)
+            WaveletTreeRangeMaxK_RedisCommand, "readonly", 1, 1, 1) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
 
     return REDISMODULE_OK;
