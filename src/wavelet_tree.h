@@ -10,7 +10,7 @@
 #define DESTRUCTIVE_BUILD 1
 
 #define FID_POWER_B(fid) 5
-#define FID_POWER_SB(fid) 9
+#define FID_POWER_SB(fid) 10
 #define FID_POWER_DIFF_B2SB(fid) (FID_POWER_SB(fid) - FID_POWER_B(fid))
 
 #define FID_NBIT_B(fid) (1<<FID_POWER_B(fid))
