@@ -408,10 +408,14 @@ int WaveletTreePrevValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_prev_value(tree, from, to, min, max);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res = wt_prev_value(tree, from, to, min, max);
+    if (res == max)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
+
     return REDISMODULE_OK;
 }
 
@@ -449,10 +453,14 @@ int WaveletTreeNextValue_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **a
     }
 
     wt_tree *tree = RedisModule_ModuleTypeGetValue(key);
-    int res = wt_next_value(tree, from, to, min, max);
-
     RedisModule_CloseKey(key);
-    RedisModule_ReplyWithLongLong(ctx, res);
+
+    int32_t res = wt_next_value(tree, from, to, min, max);
+    if (res == max)
+        RedisModule_ReplyWithNull(ctx);
+    else
+        RedisModule_ReplyWithLongLong(ctx, res);
+
     return REDISMODULE_OK;
 }
 

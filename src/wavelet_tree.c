@@ -439,7 +439,7 @@ int wt_range_list(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y,
         _wt_range_list_half(cur->right, fid_rank(cur->fid, 1, i), fid_rank(cur->fid, 1, j), y, RANGE_FLAG_LEFT, MID(lower, upper) + 1, upper, callback, user_data);
 }
 
-int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int32_t wt_prev_value(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
     y -= 1;
     const wt_node *cur = tree->root, *last_left_node = NULL;
     int last_left_i, last_left_j;
@@ -494,7 +494,7 @@ int32_t wt_prev_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
     return y + 1;
 }
 
-int32_t wt_next_value(const wt_tree *tree, int i, int j, int32_t x, int32_t y) {
+int32_t wt_next_value(const wt_tree *tree, size_t i, size_t j, int32_t x, int32_t y) {
     x += 1;
     const wt_node *cur = tree->root, *last_right_node = NULL;
     int last_right_i, last_right_j;
