@@ -134,6 +134,47 @@ int WaveletTreeBuildFromList_RedisCommand(RedisModuleCtx *ctx, RedisModuleString
     return REDISMODULE_OK;
 }
 
+// wvltr.set KEY BYTES
+int WaveletTreeSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc != 3)
+        return RedisModule_WrongArity(ctx);
+
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+
+    int type = RedisModule_KeyType(key);
+    if (type != REDISMODULE_KEYTYPE_EMPTY && RedisModule_ModuleTypeGetType(key) != WaveletTreeType) {
+        RedisModule_CloseKey(key);
+        return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+    }
+
+    int i, j;
+    size_t len;
+    const char *buf = RedisModule_StringPtrLen(argv[2], &len);
+
+    int32_t *data = RedisModule_Calloc(len>>2, sizeof(int32_t));
+    for (i = 0; i < (len>>2); ++i) {
+        for (j = 0; j < 4; ++j) {
+            data[i] <<= 8;
+            data[i] += buf[(i<<2)+j];
+        }
+    }
+
+    wt_tree *tree = wt_new();
+    wt_build(tree, data, len>>2);
+
+    RedisModule_ModuleTypeSetValue(key, WaveletTreeType, tree);
+
+    int ret = RedisModule_ReplyWithSimpleString(ctx, "OK");
+
+    RedisModule_Free(data);
+    RedisModule_CloseKey(key);
+
+    if (ret == REDISMODULE_OK)
+        RedisModule_ReplicateVerbatim(ctx);
+
+    return ret;
+}
+
 // wvltr.access KEY INDEX
 int WaveletTreeAccess_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc != 3)
