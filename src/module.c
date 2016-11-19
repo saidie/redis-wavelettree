@@ -54,12 +54,12 @@ void WaveletTreeType_Rewrite(RedisModuleIO *aof, RedisModuleString *key, void *v
     bhead = buffer = RedisModule_Calloc((tree->len << 2) + 1, sizeof(char));
     for(i = 0; i < tree->len; ++i) {
         assert(wt_access(tree, i, &v));
-        *(bhead++) = (v >>= 24) & 0xFF;
-        *(bhead++) = (v >>= 16) & 0xFF;
-        *(bhead++) = (v >>= 8) & 0xFF;
+        *(bhead++) = (v >> 24) & 0xFF;
+        *(bhead++) = (v >> 16) & 0xFF;
+        *(bhead++) = (v >> 8) & 0xFF;
         *(bhead++) = v & 0xFF;
     }
-    RedisModule_EmitAOF(aof, "wvltr.build", "sc", key, buffer);
+    RedisModule_EmitAOF(aof, "wvltr.set", "sb", key, buffer, tree->len<<2);
     RedisModule_Free(buffer);
 }
 
